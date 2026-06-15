@@ -1,0 +1,89 @@
+\documentclass[12pt,oneside]{report}
+
+%-----------------------------------------------------------
+% Packages
+%-----------------------------------------------------------
+\usepackage[a4paper,margin=3cm]{geometry}
+\usepackage{setspace}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{physics}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{cite}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{placeins}
+
+\onehalfspacing
+
+%-----------------------------------------------------------
+% Chapter style (chapter "cover" look)
+%-----------------------------------------------------------
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\Huge}
+  {\filcenter\chaptername\ \thechapter}
+  {1.5ex}
+  {\filcenter}
+  [\vspace{1ex}\rule{\textwidth}{0.4pt}]
+
+\titlespacing*{\chapter}
+  {0pt}   % left
+  {0pt}   % before
+  {40pt}  % after
+
+%-----------------------------------------------------------
+% Custom commands
+%-----------------------------------------------------------
+\newcommand{\id}{\mathbb{I}}
+\newcommand{\Hil}{\mathcal{H}}
+
+%-----------------------------------------------------------
+% Document
+%-----------------------------------------------------------
+\begin{document}
+
+%==================== Front matter =========================
+
+\input{chapters/titlepage}
+
+\pagenumbering{roman}
+
+\input{chapters/abstract}
+\input{chapters/acknowledgements}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\clearpage
+\pagenumbering{arabic}
+
+%==================== Chapters ==============================
+
+\input{chapters/ch0_introduction}
+\input{chapters/ch1_linear_algebra.tex}
+\input{chapters/ch2_quantum_information}
+\input{chapters/ch3_deep_learning}
+\input{chapters/ch4_results_interpolation}
+\input{chapters/ch5_results_qmp}
+\input{chapters/ch6_conclusions}
+
+%==================== Appendices ============================
+
+% \appendix
+
+% \input{appendices/appA_math_derivations}
+% \input{appendices/appB_nn_architectures}
+% \input{appendices/appC_additional_results}
+
+%==================== Bibliography ==========================
+
+\bibliographystyle{unsrt}
+\bibliography{references}
+
+\end{document}

@@ -1,0 +1,634 @@
+\chapter{Quantum Information}
+\label{sec:quantum_information}
+
+This chapter introduces the fundamental concepts of quantum information theory required to describe and analyze the applications developed in this thesis.
+
+In much of the quantum mechanics literature, the postulates of the theory are formulated in terms of the wave function, commonly denoted by $\ket{\psi}$. In this approach, the wave function, representing the state of the isolated physical system, is described as a vector in a Hilbert space, namely a complex inner-product space that is complete with respect to the norm induced by the inner product. While this formulation is sufficient to describe a wide range of quantum phenomena, it does not constitute the most general framework.
+
+In the context of quantum information theory, a more comprehensive description is obtained by employing the density-operator formalism, which extends the state description beyond pure states and naturally incorporates statistical mixtures. For this reason, we adopt a density-operator--centric formulation of quantum mechanics, in which all physical states are represented by density operators and quantum dynamics is described as linear maps acting on them.
+
+
+% ============================================================
+\section{Postulates}
+\label{sec:postulates}
+
+A central aspect in the formulation of any mathematical model describing the physical behavior of a system is the precise specification of its postulates, namely a set of fundamental assumptions from which the entire theoretical framework is derived. In the case of quantum mechanics, such a formulation is not unique, as different equivalent formulations may be employed to explain experimental outcomes. In this work, we adopt the formulation presented in Ref.~\cite{NielsenChuang2010}, which constitutes a standard and widely accepted reference in the field of quantum information theory.
+
+\subsection*{\small\textit{Postulate 1}}
+
+The density matrix was originally introduced to describe ensembles of quantum states. More generally, the quantum state of an isolated physical system can be equivalently represented in terms of a density operator. In this formalism, an operator $\rho$ represents a statistical ensemble $\{p_i, \ket{\psi_i}\}$ and is defined by the following properties:
+\begin{itemize}
+    \item[(1)] Normalization: $\Tr(\rho) = 1$.
+    \item[(2)] Positivity: $\rho$ is positive semidefinite, i.e., for all eigenvalues $\{\lambda_i\}$ of $\rho$, one has $\lambda_i \geq 0$.
+\end{itemize}
+
+Under these conditions, the density operator $\rho$ can be written as
+\begin{equation}
+    \rho \equiv \sum_i p_i \ket{\psi_i}\bra{\psi_i},
+\end{equation}
+where $\{p_i\}$ is a probability distribution satisfying $p_i \geq 0$ and $\sum_i p_i = 1$.
+
+If the quantum system is known to be in a definite state $\ket{\psi}$, the state is said to be \textit{pure}, and the corresponding density operator reduces to $\rho = \ket{\psi}\bra{\psi}$. Otherwise, the density operator represents a \textit{mixed state}, corresponding either to a statistical description arising from classical uncertainty about the underlying pure state or to the reduced state of a system entangled with external degrees of freedom.
+
+\subsection*{\small\textit{Postulate 2}}
+
+The evolution of a closed quantum system is described by a unitary transformation. Specifically, if the system is in the state $\rho_0$ at an initial time $t_0$, its state at a later time $t$ is given by
+\begin{equation}
+    \label{eq:postulate2}
+    \rho(t) = U(t,t_0)\, \rho_0 \, U^{\dagger}(t,t_0),
+\end{equation}
+where $U(t,t_0)$ denotes the unitary time-evolution operator. This postulate applies exclusively to closed quantum systems; extensions to open-system dynamics are discussed separately.
+
+\subsection*{\small\textit{Postulate 3}}
+
+Quantum measurements are described by a collection of measurement operators $\{ M_m \}$ acting on the system Hilbert space and satisfying the completeness relation
+\begin{equation}
+    \sum_m M_m^{\dagger} M_m = \id,
+\end{equation}
+where $\id$ is the identity operator.
+
+If the quantum system is described by a density operator $\rho$, the probability of obtaining the measurement outcome labeled by $m$ is given by
+\begin{equation}
+    p(m) = \Tr\!\left( M_m \rho M_m^{\dagger} \right).
+\end{equation}
+
+Conditioned on obtaining the outcome $m$, the post-measurement state of the system is
+\begin{equation}
+    \rho_m =
+    \frac{ M_m \rho M_m^{\dagger} }
+    { \Tr\!\left( M_m \rho M_m^{\dagger} \right) }.
+\end{equation}
+
+\medskip
+
+A particularly important class of measurements corresponds to projective measurements associated with observables. Any observable $O$ is represented by a Hermitian operator admitting a spectral decomposition of the form
+\begin{equation}
+    O = \sum_m o_m \, \Pi_m,
+\end{equation}
+where $\{o_m\}$ are the real eigenvalues corresponding to the possible outcomes of the measurement and $\{\Pi_m\}$ are orthogonal projection operators satisfying $\Pi_m \Pi_{m'} = \delta_{m m'} \Pi_m$ and $\sum_m \Pi_m = \id$.
+
+In this case, the measurement operators reduce to $M_m = \Pi_m$, and the probability of obtaining the outcome $o_m$ is given by
+\begin{equation}
+    p(m) = \Tr\!\left( \rho \, \Pi_m \right).
+\end{equation}
+
+The expectation value of the observable $O$ with respect to the quantum state $\rho$ is defined as
+\begin{equation}
+    \langle O \rangle = \sum_m o_m \, p(m)
+    = \Tr\!\left( \rho \, O \right).
+\end{equation}
+
+In this work, quantum measurements are employed primarily through expectation values and statistical outcomes, without explicitly modeling the state update induced by measurement.
+
+\subsection*{\small\textit{Postulate 4}}
+
+For a composite physical system, the state space is described as the tensor product of the Hilbert spaces associated with its subsystems. If the composite system consists of $n$ subsystems, each described by a density operator $\rho_i$, and the subsystems are prepared independently, the joint state of the global system is given by
+\begin{equation}
+    \rho = \bigotimes_{i=1}^{n} \rho_i .
+\end{equation}
+In general, the joint state of a composite system need not be of product form and may exhibit quantum correlations, including entanglement.
+
+% ============================================================
+\section{Density operators: structure and properties}
+\label{sec:density_operators}
+
+From Sec.~\ref{sec:postulates}, we have introduced the density operator formalism. In this section, we discuss several structural properties and derived quantities that follow directly from the definition of the density operator and will be used throughout this work.
+
+\paragraph{Spectral decomposition.}
+Any density operator $\rho$ acting on a $d$-dimensional Hilbert space admits a spectral decomposition of the form
+\begin{equation}
+    \rho = \sum_{i=1}^{d} \lambda_i \ket{i}\bra{i},
+\end{equation}
+where $\{\lambda_i\}_{i=1}^{d}$ are the eigenvalues of $\rho$ and $\{\ket{i}\}_{i=1}^{d}$ is an orthonormal eigenbasis of the system Hilbert space. The eigenvalues satisfy $\lambda_i \geq 0$ and $\sum_{i=1}^{d} \lambda_i = 1$.
+
+Moreover, the density operator $\rho$ represents a pure quantum state if and only if it has rank one, which is equivalent to having a single eigenvalue equal to $1$ and all remaining eigenvalues equal to $0$.
+
+\paragraph{Purity.}
+The purity of a quantum state described by a density operator $\rho$ is defined as
+\begin{equation}
+    \gamma(\rho) = \Tr(\rho^2).
+\end{equation}
+This quantity satisfies $0 < \gamma(\rho) \leq 1$, with $\gamma(\rho) = 1$ corresponding to pure states and smaller values indicating increasing degrees of mixedness. In particular, if $\gamma(\rho) < 1$, the density operator cannot be written in the form $\rho = \ket{\psi}\bra{\psi}$ for some state vector $\ket{\psi}$.
+
+\paragraph{Ensemble representations.}
+While any density operator can be written as a convex combination of pure states, such a decomposition is not unique. In contrast, the spectral decomposition of $\rho$ is unique up to degeneracies in the eigenvalue spectrum. This distinction plays an important role in the interpretation of mixed states and in practical quantum state reconstruction tasks.
+
+\paragraph{Hilbert--Schmidt inner product.}
+The space of linear operators acting on the system Hilbert space can be endowed with the Hilbert--Schmidt inner product, defined as
+\begin{equation}
+    \langle A, B \rangle_{\mathrm{HS}} := \Tr(A^{\dagger} B).
+\end{equation}
+This inner product induces a natural notion of orthogonality between operators and will be used extensively in the representation of quantum states, Hamiltonians, and dynamical generators.
+
+\textit{Corollary (Born rule for pure states).}
+For a generalized measurement described by operators $\{M_m\}$ and a pure state $\rho=\ket{\psi}\bra{\psi}$, the probability of obtaining outcome $m$ is
+\begin{align}
+    p(m) & = \Tr\!\left(M_m \rho M_m^{\dagger}\right) \nonumber                 \\
+         & = \Tr\!\left(M_m \ket{\psi}\bra{\psi} M_m^{\dagger}\right) \nonumber \\
+         & = \Tr\!\left(\ket{\psi}\bra{\psi} M_m^{\dagger} M_m\right)
+    \qquad (\text{cyclicity of the trace}) \nonumber                            \\
+         & = \bra{\psi} M_m^{\dagger} M_m \ket{\psi} \nonumber                  \\
+         & = \|M_m\ket{\psi}\|^2.
+\end{align}
+This expression recovers the standard form of the Born rule for pure states, as commonly presented in wave-function–based formulations of quantum mechanics.
+
+% ============================================================
+\section{Composite systems and Partial trace}
+
+\textit{Postulate~4} defines how to construct joint states for composite systems from the Hilbert spaces of their subsystems. However, in many situations one is interested in describing only a subsystem of a larger quantum system. In such cases, the reduced density operator provides a systematic way to obtain the state of a subsystem from the density operator of the composite system.
+
+\paragraph{Partial trace.}
+Let $\{ \ket{j}_B \}$ be an orthonormal basis of the Hilbert space associated with subsystem $B$. The partial trace over subsystem $B$ is defined as
+\begin{equation}
+    \Tr_{B}\!\left( \rho^{AB} \right) := \sum_j \left( \id_A \otimes \bra{j}_B \right) \rho^{AB} \left( \id_A \otimes \ket{j}_B \right).
+\end{equation}
+This operation yields an operator acting on the Hilbert space of subsystem $A$ and preserves positivity and trace.
+
+\paragraph{Reduced density operator.}
+The reduced density operator associated with subsystem $A$ is defined as
+\begin{equation}
+    \label{eq:partial_trace}
+    \rho^{A} \equiv \Tr_{B}\!\left( \rho^{AB} \right),
+\end{equation}
+where $\rho^{AB}$ denotes the density operator describing the joint system composed of subsystems $A$ and $B$.
+
+\paragraph{Reduced states and expectation values.}
+The reduced density operator $\rho^{A}$ fully characterizes all measurement statistics associated with observables acting solely on subsystem $A$. In particular, for any observable $O_A$ acting on subsystem $A$, one has
+\begin{equation}
+    \Tr\!\left( \rho^{AB} \, (O_A \otimes \id_B) \right) = \Tr\!\left( \rho^{A} \, O_A \right).
+\end{equation}
+This property justifies the interpretation of $\rho^{A}$ as the effective quantum state of subsystem $A$.
+
+\paragraph{Entanglement.}
+Entanglement is one of the most intensively studied resources in quantum information theory, as it captures the existence of correlations in composite quantum systems that have no classical counterpart. These correlations manifest themselves in the measurement outcomes of entangled quantum states and cannot be explained within the framework of classical physics, thus highlighting one of the most fundamental differences between classical and quantum theories.
+
+From a formal perspective, entanglement is naturally defined within the density matrix formalism. Consider a bipartite quantum system composed of two subsystems $A$ and $B$, described by a joint density matrix $\rho_{AB}$ acting on the composite Hilbert space $\mathcal{H}_A \otimes \mathcal{H}_B$. The state $\rho_{AB}$ is said to be \emph{separable} if it can be expressed as a convex combination of product states, namely,
+\begin{equation}
+    \label{eq:separable}
+    \rho_{AB} = \sum_k p_k\, \rho_A^{(k)} \otimes \rho_B^{(k)},
+    \qquad p_k \geq 0, \quad \sum_k p_k = 1,
+\end{equation}
+where $\rho_A^{(k)}$ and $\rho_B^{(k)}$ are valid density matrices associated with subsystems $A$ and $B$, respectively.
+
+Separable states describe correlations that can be interpreted as purely classical, arising from statistical mixtures of local quantum states. In contrast, if the joint state $\rho_{AB}$ cannot be written in the form of Eq.~\eqref{eq:separable}, it is classified as an \emph{entangled} state. Entangled states exhibit intrinsically quantum correlations that cannot be reproduced by any classical probabilistic model based on local descriptions of the subsystems.
+
+A particularly relevant property arises when considering pure states. If the joint state $\rho_{AB}$ is pure and separable, i.e., of the form $\rho_{AB} = \rho_A \otimes \rho_B$, then the reduced state $\rho_A$ is also pure. In contrast, when the joint state is entangled, the subsystems cannot be described independently, and the reduced density operator $\rho_A$ is necessarily mixed, even if the global state $\rho_{AB}$ is pure. This demonstrates that mixed states may arise not only from classical statistical uncertainty but also as a direct physical consequence of entanglement with external degrees of freedom.
+
+\paragraph{The quantum marginal problem.}
+When dealing with composite quantum systems, a natural question arises regarding the relationship between global states and their reduced descriptions. Given a multipartite quantum state $\rho_{AB\cdots}$, its reduced states (or \emph{marginals}) are obtained by taking partial traces over subsystems. While this procedure is straightforward, the inverse problem is highly nontrivial.
+
+The \emph{quantum marginal problem} asks whether a given set of reduced density matrices is compatible with a global quantum state. More precisely, given a collection of density operators describing subsystems of a composite system, one seeks to determine whether there exists a joint density matrix whose reduced states coincide with the given marginals.
+
+Unlike the classical case, not every set of locally consistent marginals admits a global quantum extension. This incompatibility arises from genuinely quantum constraints, such as entanglement and the structure of the underlying Hilbert space. As a consequence, reduced density matrices do not, in general, uniquely determine the global state, and different global states may share the same set of marginals.
+
+The quantum marginal problem highlights fundamental limitations in the reconstruction of global quantum states from local information and plays an important role in quantum information theory, quantum chemistry, and many-body physics. In particular, it provides a conceptual framework for understanding the emergence of mixed reduced states, the role of entanglement, and the challenges associated with state and process reconstruction in composite quantum systems. This problem will be discussed in more detail in the following chapters.
+
+% ============================================================
+\section{Quantum dynamics of density matrices}
+
+\paragraph{Master equation.}
+\textit{Postulate~2} establishes the time evolution of quantum states by relating the state of a system at different times.
+In quantum mechanics, however, several equivalent formulations---known as \textit{pictures}---exist, which differ in how the time dependence is distributed between states and observables.
+The two most commonly used formulations are the \textit{Schrödinger picture} and the \textit{Heisenberg picture}.
+In the Schrödinger picture, the time dependence is entirely carried by the quantum states, while observables are taken to be time-independent, unless they possess an explicit time dependence.
+
+Throughout this work we adopt the Schrödinger picture.
+Within this framework, the evolution of a closed quantum system is described by unitary operators acting on the state of the system, which may be represented either by state vectors or, more generally, by density operators.
+
+To derive the equation of motion for the density operator, consider a state vector $\ket{\psi(t)}$ at time $t$, represented as a normalized vector in the system Hilbert space.
+Assuming a (possibly time-dependent) Hamiltonian $H(t)$, the Schrödinger equation reads
+\begin{equation}
+    \label{eq:schrodinger}
+    i \dv{t} \ket{\psi(t)} = H(t)\ket{\psi(t)},
+\end{equation}
+where we set $\hbar = 1$.
+
+The formal solution of Eq.~\eqref{eq:schrodinger} can be written in terms of the unitary time-evolution operator $U(t,t_0)$, which maps the state at an initial time $t_0$ to the state at time $t$,
+\begin{equation}
+    \label{eq:state_evolution}
+    \ket{\psi(t)} = U(t,t_0)\ket{\psi(t_0)}.
+\end{equation}
+
+Substituting Eq.~\eqref{eq:state_evolution} into Eq.~\eqref{eq:schrodinger} yields the operator equation governing the time-evolution operator,
+\begin{equation}
+    \label{eq:U_evolution}
+    i \dv{t} U(t,t_0) = H(t)\, U(t,t_0),
+\end{equation}
+supplemented with the initial condition $U(t_0,t_0)=\id$.
+
+The density operator $\rho(t)$ describing the state of the system at time $t$ is related to the initial density operator $\rho_0$ at time $t_0$ through
+\begin{equation}
+    \rho(t) = U(t,t_0)\,\rho_0\,U^{\dagger}(t,t_0),
+\end{equation}
+as stated in \textit{Postulate~2}.
+
+Differentiating this expression with respect to time, using Eq.~\eqref{eq:U_evolution}, and exploiting the Hermiticity of the Hamiltonian, $H(t)=H^{\dagger}(t)$, we obtain
+\begin{align}
+    \dv{t} \rho(t)
+     & = \dv{t} U(t,t_0) \,\rho_0\,U^{\dagger}(t,t_0)
+    + U(t,t_0)\,\rho_0\,\dv{t} U^{\dagger}(t,t_0) \nonumber \\
+     & = -i H(t)\rho(t) + i \rho(t)H(t) \nonumber           \\
+     & = -i\,[H(t),\rho(t)],
+\end{align}
+where $\comm{\cdot}{\cdot}$ denotes the commutator between two operators.
+
+This equation is known as the \textit{von Neumann equation}, and governs the unitary dynamics of closed quantum systems in the Schrödinger picture. A detailed discussion can be found in Ref.~\cite{BreuerPetruccione2006}.
+
+\paragraph{Solution.}
+To properly describe the dynamics of density operators, it is necessary to determine the corresponding time-evolution operator associated with the Hamiltonian governing the system.
+Two relevant cases can be distinguished:
+(i) evolution generated by a time-independent Hamiltonian, and
+(ii) evolution generated by a time-dependent Hamiltonian.
+
+In both cases, the system may remain closed and the dynamics is unitary.
+A time-dependent Hamiltonian does not necessarily imply an open system, but may arise, for instance, from externally controlled fields or explicitly time-modulated parameters acting on an otherwise isolated quantum system.
+
+For the case of a time-independent Hamiltonian $H$, the solution of Eq.~\eqref{eq:U_evolution} can be obtained in closed form, and the time-evolution operator reads
+\begin{equation}
+    U(t,t_0) = \exp\!\left[-i H (t - t_0)\right].
+\end{equation}
+
+In contrast, when the Hamiltonian depends explicitly on time, $H(t)$, the time-evolution operator is formally given by
+\begin{equation}
+    U(t,t_0) = \mathcal{T} \exp\!\left[-i \int_{t_0}^{t} \mathrm{d}\tau \, H(\tau)\right],
+\end{equation}
+where $\mathcal{T}$ denotes the time-ordering operator, which arranges products of operators such that terms evaluated at later times appear to the left.
+The presence of this operator is essential because, in general, a time-dependent Hamiltonian does not commute with itself at different times, i.e.,
+$[H(t_1), H(t_2)] \neq 0$ for $t_1 \neq t_2$.
+As a consequence, different temporal orderings of the operators lead to different physical results.
+
+For this reason, the exact time-evolution operator is typically expressed through systematic approximation schemes or infinite series representations, such as the Dyson series \cite{Sakurai1994}, the Magnus expansion \cite{blanes2009}, or the Trotter product formula \cite{Trotter1959}.
+
+\subparagraph{Dyson series.}
+Equation~\eqref{eq:U_evolution} can be rewritten as the integral equation
+\begin{equation}
+    U(t,t_0) = \id - i \int_{t_0}^{t} H(\tau)\, U(\tau,t_0)\, \mathrm{d}\tau .
+\end{equation}
+
+A formal solution is obtained by iteratively substituting the operator $U(\tau,t_0)$ inside the integral. This procedure generates a perturbative expansion given by
+\begin{align}
+    U(t,t_0) = & \, \id
+    - i \int_{t_0}^{t} \mathrm{d}\tau\, H(\tau)
+    + (-i)^2 \int_{t_0}^{t} \mathrm{d}\tau \int_{t_0}^{\tau} \mathrm{d}\tau'\, H(\tau) H(\tau') \nonumber \\
+               & + \dots
+    + (-i)^n \int_{t_0}^{t} \mathrm{d}\tau \int_{t_0}^{\tau} \mathrm{d}\tau' \cdots
+    \int_{t_0}^{\tau^{(n-1)}} \mathrm{d}\tau^{(n)}\,
+    H(\tau) H(\tau') \cdots H(\tau^{(n)})
+    + \dots
+\end{align}
+
+This expansion is known as the \textit{Dyson series} and provides a systematic perturbative construction of the time-evolution operator for time-dependent Hamiltonians. Despite its formal exactness, the Dyson series presents two major practical limitations. First, in any numerical implementation the series must be truncated at a finite order, which generally leads to an approximate evolution operator that is no longer unitary. As a consequence, probability conservation is violated, requiring artificial re-normalization procedures and potentially driving the quantum states outside the space of physical states, \textit{i.e.}, violating the conditions imposed by \textit{Postulate~1} during time evolution.
+
+Second, the explicit evaluation of the nested time-ordered integrals becomes computationally expensive, even at relatively low orders of truncation. This rapidly increasing computational cost severely limits the applicability of the Dyson series in large-scale or long-time numerical simulations, motivating the development of alternative approaches that preserve unitarity by construction.
+
+\subparagraph{Magnus expansion.}
+Alternatively, the solution of Eq.~\eqref{eq:U_evolution} can be expressed using the Magnus expansion, which provides a representation of the time-evolution operator in exponential form,
+\begin{equation}
+    U(t,t_0) = \exp\!\big[\Omega(t,t_0)\big],
+\end{equation}
+where the operator $\Omega(t,t_0)$ is given as an infinite series,
+\begin{equation}
+    \Omega(t,t_0) = \sum_{k=1}^{\infty} \Omega_k(t,t_0).
+\end{equation}
+
+The first terms of the Magnus expansion are given by
+\begin{align}
+    \Omega_1(t,t_0) & = -i \int_{t_0}^{t} \mathrm{d}\tau \, H(\tau), \\
+    \Omega_2(t,t_0) & = -\frac{1}{2} \int_{t_0}^{t} \mathrm{d}\tau
+    \int_{t_0}^{\tau} \mathrm{d}\tau'\,
+    \big[ H(\tau), H(\tau') \big],                                   \\
+    \Omega_3(t,t_0) & = \frac{i}{6} \int_{t_0}^{t} \mathrm{d}\tau
+    \int_{t_0}^{\tau} \mathrm{d}\tau'
+    \int_{t_0}^{\tau'} \mathrm{d}\tau'' \,
+    \Big(
+    [H(\tau),[H(\tau'),H(\tau'')]] \nonumber                         \\
+                    & \quad + [H(\tau''),[H(\tau'),H(\tau)]]
+    \Big),
+\end{align}
+while higher-order terms involve increasingly nested commutators of the Hamiltonian evaluated at different times.
+
+A key advantage of the Magnus expansion is that, at any finite truncation order, the time-evolution operator is explicitly written as the exponential of an anti-Hermitian operator. Consequently, since the Hamiltonian $H(t)$ is Hermitian, the truncated evolution operator remains unitary by construction.
+
+From a numerical standpoint, the Magnus expansion offers improved stability and physical consistency, as it preserves norm and probability conservation without requiring re-normalization procedures. Nevertheless, its practical applicability is limited by the rapid growth in the number and complexity of nested commutators appearing at higher orders, which can significantly increase the computational cost. Despite this limitation, low-order Magnus expansions often provide accurate and reliable approximations, making them well suited for controlled simulations of time-dependent quantum dynamics.
+
+It is also worth noting that if the Hamiltonian $H(t)$ commutes with itself at different times all higher-order Magnus terms vanish and the expansion reduces to the first-order contribution $\Omega_1(t,t_0)$. This result highlights that the necessity of including higher-order terms is directly related to the non-commutativity of the Hamiltonian at different times, and therefore to the intrinsic complexity of the time-dependent dynamics.
+
+\subparagraph{Trotter formula.}
+An alternative approximation to the time-evolution operator for time-dependent Hamiltonians is provided by the Trotter product formula. This approach is particularly useful when the Hamiltonian can be written as a sum of simpler (generally non-commuting) contributions,
+\begin{equation}
+    H(t) = \sum_{k} H_k(t),
+\end{equation}
+for which the individual exponential operators can be efficiently evaluated.
+
+To construct the time-evolution operator from an initial time $t_0$ to a final time $t$, the time interval is discretized into $N$ subintervals of equal length $\Delta t = (t - t_0)/N$, such that
+\[
+    t_n = t_0 + n \Delta t, \qquad n = 0,1,\dots,N.
+\]
+Over each small interval $[t_n, t_{n+1}]$, the Hamiltonian is assumed to be approximately constant and equal to its value at $t_n$. Under this assumption, the short-time evolution operator can be approximated as
+\begin{equation}
+    U(t_{n+1}, t_n)
+    \approx
+    \exp\!\left[-i H(t_n)\, \Delta t\right].
+\end{equation}
+
+If the Hamiltonian is further decomposed into a sum of terms $H_k(t_n)$, the exponential of the total Hamiltonian can be approximated using the first-order Trotter product formula,
+\begin{equation}
+    \exp\!\left[-i H(t_n)\, \Delta t\right]
+    \approx
+    \prod_{k} \exp\!\left[-i H_k(t_n)\, \Delta t\right]
+    + \mathcal{O}(\Delta t^2),
+\end{equation}
+where the error arises from the non-commutativity of the operators $H_k(t_n)$.
+
+By composing the evolution over all time steps, the full time-evolution operator is approximated as
+\begin{equation}
+    U(t,t_0)
+    =
+    \lim_{N \to \infty}
+    \prod_{n=0}^{N-1}
+    \left[
+        \prod_{k} \exp\!\left(-i H_k(t_n)\, \Delta t\right)
+        \right],
+\end{equation}
+where the product over $n$ is time-ordered, with earlier times appearing to the right. In the limit $\Delta t \to 0$ (or equivalently $N \to \infty$), this construction converges to the exact time-evolution operator.
+
+The Trotter formula provides a simple and physically transparent approximation scheme for the time-evolution operator. At each time step, unitarity is preserved by construction, since the approximation is expressed as a product of unitary operators. In the present work, the first-order Trotter approximation is sufficient to accurately capture the relevant dynamics.
+
+As in the Magnus expansion, the Trotter formula guarantees unitarity. However, in contrast to both the Dyson series and the Magnus expansion, the Trotter approach does not require the explicit evaluation of time-ordered integrals or nested commutators. This feature makes it particularly well suited for numerical implementations, as the computation of the time-evolution operator reduces to evaluating matrix exponentials of simpler Hamiltonian terms at each discretized time step.
+
+% ============================================================
+\section{Pauli basis and operator representations}
+Throughout this work, the physical systems of interest are two-level quantum systems, or composite systems formed by subsystems with two accessible energy levels. The quantum states considered therefore describe such systems, commonly referred to as \textit{qubits}. Although quantum information theory is not restricted to two-level systems and can be naturally extended to $n$-level systems, known as \textit{qudits}, the focus of this work is exclusively on qubit-based systems.
+
+The dynamics and structure of qubits are conveniently described within a mathematical framework associated with the Lie group $\mathfrak{su}(2)$, which captures the symmetry properties of isolated two-level quantum systems. Within this framework, a set of four operators plays a central role: the identity operator and the three Pauli matrices. Together, these operators form a complete basis for the vector space of linear operators acting on a single-qubit Hilbert space. As a result, any single-qubit density operator, Hamiltonian, or unitary evolution operator can be expressed as a linear combination of these matrices. In what follows, this operator basis will be referred to as the \textit{Pauli basis}, defined by
+\begin{align}
+    \sigma_0 & \equiv
+    \begin{bmatrix}
+        1 & 0 \\
+        0 & 1
+    \end{bmatrix},    \\[1.2em]
+    \sigma_1 & \equiv
+    \begin{bmatrix}
+        0 & 1 \\
+        1 & 0
+    \end{bmatrix},    \\[1.2em]
+    \sigma_2 & \equiv
+    \begin{bmatrix}
+        0 & -i \\
+        i & 0
+    \end{bmatrix},    \\[1.2em]
+    \sigma_3 & \equiv
+    \begin{bmatrix}
+        1 & 0  \\
+        0 & -1
+    \end{bmatrix}.
+\end{align}
+
+These matrices satisfy several important algebraic relations,
+\begin{align}
+    \label{eq:pauli-prop1}
+    [\sigma_i, \sigma_j]     & = 2i\, \epsilon_{ijk}\, \sigma_k,                    \\
+    \label{eq:pauli-prop2}
+    \{ \sigma_i, \sigma_j \} & = 2\, \delta_{ij}\, \id,                             \\
+    \label{eq:pauli-prop3}
+    \sigma_i \sigma_j        & = \delta_{ij}\, \id + i\, \epsilon_{ijk}\, \sigma_k,
+\end{align}
+where $\delta_{ij}$ denotes the Kronecker delta, $\{\cdot,\cdot\}$ denotes the anticommutator and $i,j,k \in \{1,2,3\}$.
+
+\paragraph{Pauli vectors.}
+It is useful to introduce a correspondence between vectors in $\mathbb{R}^3$ and the space of traceless Hermitian $2 \times 2$ matrices. This correspondence is naturally established through the Pauli matrices, which form a basis for the Lie algebra $\mathfrak{su}(2)$. Within this framework, any single-qubit density matrix can be parametrized in terms of a real three-dimensional vector, known as the Bloch vector.
+
+Explicitly, a one-qubit density operator can be written as
+\begin{equation}
+    \rho = \frac{1}{2}\,\id + \va{r} \vdot \vb*{\sigma},
+\end{equation}
+where $\va{r} \in \mathbb{R}^3$ is the Bloch vector and $\vb*{\sigma}$ denotes the Pauli vector. The Pauli vector is defined as the operator-valued vector
+\begin{equation}
+    \vb*{\sigma} = \sigma_1\, \vu{x}_1 + \sigma_2\, \vu{x}_2 + \sigma_3\, \vu{x}_3,
+\end{equation}
+with $\vu{x}_1$, $\vu{x}_2$, and $\vu{x}_3$ being the canonical unit vectors of $\mathbb{R}^3$.
+
+The components of the Bloch vector are given by the expectation values of the Pauli operators,
+\begin{equation}
+    r_i = \frac{1}{2}\,\mathrm{Tr}(\rho\, \sigma_i), \qquad i \in \{1,2,3\},
+\end{equation}
+which ensures that $\va{r}$ is real-valued due to the Hermiticity of $\rho$ and the Pauli matrices. The positivity and unit-trace conditions imposed on density operators restrict the norm of the Bloch vector to satisfy
+\begin{equation}
+    \label{eq:bloch-condition}
+    \qty| \va{r} | \leq 1.
+\end{equation}
+
+Geometrically, this condition defines a unit-radius sphere in $\mathbb{R}^3$, where each point inside the sphere is uniquely associated with a valid density operator. This geometric representation is known as the Bloch sphere. Pure states correspond to vectors lying on the surface of the sphere, whereas mixed states are represented by vectors strictly inside it.
+
+This parametrization provides a geometrically intuitive description of single-qubit quantum states. In particular, unitary evolutions generated by Hamiltonians proportional to the Pauli vector correspond to rotations of the Bloch vector in $\mathbb{R}^3$. Consequently, the Pauli vector formalism establishes a direct link between the algebraic structure of $\mathfrak{su}(2)$ and the geometric representation of qubit states.
+
+\paragraph{Dynamics in the Pauli basis.}
+The Pauli vector formalism provides a natural representation for single-qubit Hamiltonians. Any Hermitian operator acting on a two-dimensional Hilbert space can be expanded in the Pauli basis. In particular, a general time-dependent single-qubit Hamiltonian can be written as
+\begin{equation}
+    H(t) = \va{h}(t) \vdot \vb*{\sigma},
+\end{equation}
+where $\va{h}(t) \in \mathbb{R}^3$ is a real vector characterizing the Hamiltonian. In this representation, the full time dependence of the Hamiltonian is entirely encoded in the vector $\va{h}(t)$.
+
+Consider the simpler case in which the Hamiltonian is time-independent. In this case, the time-evolution operator is given by
+\begin{equation}
+    U(t,t_0) = \exp\qty[-i (t-t_0) H]
+    = \exp\qty[-i (t-t_0)\, \va{h} \vdot \vb*{\sigma}],
+\end{equation}
+where the exponent satisfies
+\begin{equation}
+    \label{eq:exp-feature}
+    \qty(\va{h} \vdot \vb*{\sigma})^2 = h^2\, \id,
+\end{equation}
+where $h = | \va{h} |$.
+
+Using the series definition of the exponential,
+\begin{equation}
+    \label{eq:u-total}
+    e^{-iH(t-t_0)} =
+    \sum_{n=0}^{\infty}
+    \frac{\qty[-i(t-t_0)]^n}{n!} H^n,
+    \qquad
+    H = \va{h} \vdot \vb*{\sigma},
+\end{equation}
+the even-order terms yield
+\begin{align}
+    \label{eq:u-even}
+    \sum_{n=0}^{\infty}
+    \frac{\qty[-i(t-t_0)]^{2n}}{(2n)!} H^{2n}
+     & =
+    \sum_{n=0}^{\infty}
+    \frac{(-1)^n \qty[h\, (t-t_0)]^{2n}}{(2n)!}\,\id \nonumber \\
+     & =
+    \cos\qty[h\, (t-t_0)]\,\id,
+\end{align}
+while the odd-order terms give
+\begin{align}
+    \label{eq:u-odd}
+    \sum_{n=0}^{\infty}
+    \frac{\qty[-i(t-t_0)]^{2n+1}}{(2n+1)!} H^{2n+1}
+     & =
+    -i
+    \sum_{n=0}^{\infty}
+    \frac{(-1)^n \qty[h\, (t-t_0)]^{2n+1}}{(2n+1)!}
+    \, \vu{h} \vdot \vb*{\sigma} \nonumber \\
+     & =
+    -i \sin\qty(h\, (t-t_0))\,
+    \vu{h} \vdot \vb*{\sigma},
+\end{align}
+where $\vu{h} = \va{h}/h\, $.
+
+Substituting Eqs.~\eqref{eq:u-even} and \eqref{eq:u-odd} into Eq.~\eqref{eq:u-total}, the time-evolution operator can be written in closed form as
+\begin{equation}
+    U(t,t_0) = \cos\qty(h\, (t-t_0)) \, \id - i \sin\qty(h\, (t-t_0))\, \vu{h} \vdot \vb*{\sigma}.
+\end{equation}
+
+This expression shows that the unitary evolution induces a rigid rotation of the Bloch vector associated with a quantum state around the axis defined by the unit vector $\vu{h}$, with angular frequency $2\qty|\va{h}|$. This establishes a direct correspondence between unitary dynamics in Hilbert space and rotations in $\mathbb{R}^3$, further highlighting the usefulness of the Pauli vector formalism as a bridge between algebraic and geometric descriptions of single-qubit dynamics.
+
+\paragraph{Extension to multi-qubit systems.}
+
+The Pauli vector formalism can be naturally extended to composite quantum systems composed of $n$ qubits by following \textit{Postulate~4}. In this case, operators acting on the composite Hilbert space can be conveniently represented using tensor products of single-qubit Pauli operators. Specifically, an operator basis for an $n$-qubit system can be constructed as the set of all $n$-fold tensor products
+\begin{equation}
+    \sigma_{\boldsymbol{\mu}} = \sigma_{\mu_1} \otimes \sigma_{\mu_2} \otimes \cdots \otimes \sigma_{\mu_n},
+    \qquad \mu_k \in \{0,1,2,3\}.
+\end{equation}
+
+These operators are commonly referred to as \emph{Pauli strings}. The Pauli strings constitute an orthogonal basis with respect to the Hilbert--Schmidt inner product,
+\begin{equation}
+    \Tr\!\qty(\sigma_{\boldsymbol{\mu}} \, \sigma_{\boldsymbol{\nu}}) = 2^n \, \delta_{\boldsymbol{\mu},\boldsymbol{\nu}},
+\end{equation}
+where $\delta_{\boldsymbol{\mu},\boldsymbol{\nu}}$ denotes the Kronecker delta over multi-indices, defined as
+\begin{equation}
+    \delta_{\boldsymbol{\mu},\boldsymbol{\nu}} = \prod_{k=1}^{n} \delta_{\mu_k \nu_k}.
+\end{equation}
+
+Therefore any operator $O$ acting on an $n$-qubit system can be expanded as
+\begin{equation}
+    O = \sum_{\boldsymbol{\mu}} c_{\boldsymbol{\mu}} \, \sigma_{\boldsymbol{\mu}},
+    \qquad c_{\boldsymbol{\mu}} = \frac{1}{2^n} \Tr\!\qty(O \, \sigma_{\boldsymbol{\mu}}).
+\end{equation}
+
+In particular, an arbitrary $n$-qubit density operator admits the expansion
+\begin{equation}
+    \rho = \frac{1}{2^n} \sum_{\boldsymbol{\mu}} r_{\boldsymbol{\mu}} \, \sigma_{\boldsymbol{\mu}},
+\end{equation}
+where the real coefficients $r_{\boldsymbol{\mu}} = \Tr(\rho\,\sigma_{\boldsymbol{\mu}})$ generalize the notion of the Bloch vector to multi-qubit systems. Similarly, a general $n$-qubit Hamiltonian can be written as
+\begin{equation}
+    H(t) = \sum_{\boldsymbol{\mu}} h_{\boldsymbol{\mu}}(t) \, \sigma_{\boldsymbol{\mu}},
+\end{equation}
+where the time dependence of the Hamiltonian is entirely encoded in the real coefficients $h_{\boldsymbol{\mu}}(t)$.
+
+This representation provides a unified and scalable framework for describing the structure and dynamics of multi-qubit systems, and serves as a natural language for many-body Hamiltonians, quantum control protocols, and machine-learning-based approaches to quantum dynamics.
+
+% ============================================================
+\section{Fidelity}
+
+\paragraph{Fidelity between density matrices.}
+To quantitatively assess the similarity between quantum states and quantum operations, it is necessary to introduce appropriate fidelity measures. These quantities play a central role in the validation of quantum dynamics, the characterization of control protocols, and the evaluation of machine-learning-based models for quantum systems.
+
+The fidelity between two quantum states $\rho$ and $\sigma$ is defined as \cite{NielsenChuang2010}
+\begin{equation}
+    \label{eq:fidelity}
+    F(\rho,\sigma)
+    =
+    \Tr\!\qty(
+    \sqrt{\sqrt{\rho}\,\sigma\,\sqrt{\rho}}
+    ).
+\end{equation}
+This definition admits simplified expressions in relevant special cases. If one of the states is pure, $\rho = \ket{\psi}\bra{\psi}$, the fidelity reduces to
+\begin{equation}
+    F(\ket{\psi},\sigma)
+    =
+    \sqrt{\bra{\psi}\sigma\ket{\psi}},
+\end{equation}
+while for two pure states, $\rho = \ket{\psi}\bra{\psi}$ and $\sigma = \ket{\phi}\bra{\phi}$, it further reduces to
+\begin{equation}
+    F(\ket{\psi},\ket{\phi})
+    =
+    \qty|\braket{\psi}{\phi}|.
+\end{equation}
+
+For any pair of density operators $\rho$ and $\sigma$, the fidelity satisfies the following properties:
+\begin{itemize}
+    \item \textbf{Bounds:}
+          $0 \leq F(\rho,\sigma) \leq 1.$
+
+    \item \textbf{Normalization:}
+          $F(\rho,\sigma) = 1 \quad \text{if and only if} \quad \rho = \sigma.$
+
+    \item \textbf{Symmetry:}
+          $F(\rho,\sigma) = F(\sigma,\rho).$
+
+    \item \textbf{Unitary invariance:}
+          For any unitary operator $U$,
+          \begin{equation}
+              F(U\rho U^\dagger,\, U\sigma U^\dagger) = F(\rho,\sigma).
+          \end{equation}
+
+    \item \textbf{Joint concavity:}
+          For any sets $\{\rho_i\}$, $\{\sigma_i\}$ and probabilities $\{p_i\}$,
+          \begin{equation}
+              F \qty(\sum_i p_i \rho_i, \sum_i p_i \sigma_i ) \geq \sum_i p_i F(\rho_i,\sigma_i).
+          \end{equation}
+\end{itemize}
+
+It is important to note that this expression does not define a metric on the space of density operators, as it does not satisfy the triangle inequality. Nevertheless, it remains a very useful quantity for comparing density matrices.
+
+\paragraph{Fidelity between operations.}
+To compare quantum operations, it is convenient to adopt the framework of quantum channels, where a quantum operation is described as a linear map $\mathcal{E}$ acting on density operators,
+\begin{equation}
+    \rho' = \mathcal{E}(\rho).
+\end{equation}
+
+The Choi--Jamiołkowski representation provides a convenient way to compare quantum channels by establishing a one-to-one correspondence between completely positive trace-preserving maps and positive semidefinite operators acting on an extended Hilbert space \cite{Watrous2018}.
+
+Consider a unitary operator $U$ acting on a $d$-dimensional Hilbert space. The associated unitary quantum channel $\mathcal{U}$ is defined as
+\begin{equation}
+    \mathcal{U}(\rho) = U \rho U^\dagger,
+\end{equation}
+and its corresponding Choi matrix is given by
+\begin{equation}
+    \label{eq:choi}
+    J_U = (\mathcal{U} \otimes \id)\qty(\ket{\Phi}\bra{\Phi}),
+\end{equation}
+where
+\begin{equation}
+    \ket{\Phi} = \frac{1}{\sqrt{d}} \sum_{i=1}^{d} \ket{i} \otimes \ket{i}
+\end{equation}
+is a maximally entangled reference state.
+
+Since the Choi--Jamiołkowski isomorphism maps quantum operations to density matrices, the fidelity defined in Eq.~\eqref{eq:fidelity} can be directly used to compare quantum channels. Consider two unitary operators $U$ and $V$, with associated Choi matrices
+\begin{align}
+    J_U & = (\mathcal{U} \otimes \id)\qty(\ket{\Phi}\bra{\Phi}), \\
+    J_V & = (\mathcal{V} \otimes \id)\qty(\ket{\Phi}\bra{\Phi}).
+\end{align}
+
+Unitary channels correspond to pure Choi states, which can be written as $J_U = \ket{J_U}\bra{J_U}$ and $J_V = \ket{J_V}\bra{J_V}$. In this case, the fidelity reduces to the absolute value of the overlap,
+\begin{equation}
+    F(J_U, J_V) = \qty| \braket{J_U}{J_V} |.
+\end{equation}
+Using Eq.~\eqref{eq:choi}, this expression becomes
+\begin{equation}
+    \label{eq:gate_fidelity}
+    F(J_U, J_V)
+    =
+    \qty| \bra{\Phi} (\id \otimes U^\dagger V) \ket{\Phi} |
+    =
+    \frac{1}{d}
+    \qty| \Tr(U^\dagger V) |.
+\end{equation}
+
+This quantity is commonly referred to as the \emph{gate fidelity}. In particular, if $U = V$, then $\Tr(U^\dagger V) = d$, yielding $F(J_U, J_V) = 1$, which corresponds to maximal fidelity. The fidelity between Choi matrices therefore provides a consistent and operationally meaningful measure for comparing unitary quantum operations.
+
+% ============================================================
+\section{Summary}
+In this chapter, the fundamental concepts of quantum information theory required throughout this thesis have been introduced. The formulation of quantum mechanics based on density operators was adopted as the primary framework, as it provides a general and operationally meaningful description of both pure and mixed quantum states, as well as a natural language for open and composite systems.
+
+Starting from the postulates of quantum mechanics, the structural properties of density operators were discussed, including their spectral decomposition, purity, ensemble representations, and operator inner products. The formalism was then extended to composite systems through the tensor-product structure of Hilbert spaces and the partial trace operation, leading to the definition of reduced density operators and the introduction of entanglement as a genuinely quantum form of correlation.
+
+The role of entanglement was further emphasized by discussing the quantum marginal problem, which highlights the fundamental limitations associated with reconstructing global quantum states from local information. This problem provides important conceptual insight into the structure of composite quantum systems and motivates the need for alternative approaches when dealing with incomplete or indirect descriptions of quantum dynamics.
+
+The chapter also addressed the unitary dynamics of closed quantum systems through the von Neumann equation, together with several analytical and numerical approaches for solving time-dependent dynamics, including the Dyson series, the Magnus expansion, and the Trotter product formula. These methods establish the theoretical basis for the simulation and approximation of quantum evolution operators.
+
+Finally, the Pauli basis was introduced as a convenient operator representation for qubit systems, enabling a compact and scalable description of quantum states, Hamiltonians, and dynamical generators. Within this framework, the concept of fidelity was presented as a quantitative measure of similarity between quantum states and quantum operations, including its extension to unitary channels via the Choi--Jamiołkowski representation.
+
+Together, the tools and concepts developed in this chapter provide the mathematical and conceptual foundation required for the learning-based modeling of quantum dynamics explored in the subsequent chapters.

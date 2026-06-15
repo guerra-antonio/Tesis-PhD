@@ -1,0 +1,433 @@
+\chapter{Linear Algebra}
+\label{sec:linear_algebra}
+
+The purpose of this chapter is to introduce the fundamental elements of linear algebra that are required in Chapters~\ref{sec:quantum_information} and~\ref{sec:deep_learning}. Rather than providing a comprehensive and fully demonstrative exposition of linear algebra, the presentation is intentionally restricted to the definitions and structures that are directly used in the subsequent chapters.
+
+In particular, the concepts introduced here are essential for formulating quantum states, observables, and dynamics in terms of linear operators acting on finite-dimensional Hilbert spaces, as well as for expressing neural network architectures, loss functions, and optimization procedures within a unified and mathematically transparent framework.
+
+Throughout this chapter, all vector spaces are assumed to be finite-dimensional, which ensures the equivalence of norms and the validity of the operator representations employed in the remainder of this thesis.
+
+\section{Vector spaces}
+\label{sec:vectorial-space}
+
+In physics, mathematical objects are assigned physical meaning in order to describe observable quantities and dynamical laws. Physical theories are therefore formulated in terms of abstract mathematical structures whose elements acquire a direct physical interpretation. A simple example arises in classical mechanics, where the position of a particle is represented by a vector in three-dimensional real space, $\mathbb{R}^3$. In this representation, vectors are mathematical objects composed of three real-valued components, each corresponding to a spatial coordinate.
+
+This construction can be naturally generalized to $n$ dimensions, leading to the vector space $\mathbb{R}^n$, whose elements are vectors composed of $n$ real components. More generally, the components of vectors need not be restricted to real numbers, but may belong to a more general set of scalars known as a \emph{field}, most commonly $\mathbb{R}$ or $\mathbb{C}$. By varying both the dimensionality of the vectors and the underlying field, a broad class of vector spaces can be constructed.
+
+To provide a precise mathematical definition, it is necessary to specify not only the elements of the space, but also the operations that can be performed on them. A vector space $\mathcal{V}$ over a field $\mathbb{F}$ is therefore defined as a set equipped with vector addition and scalar multiplication satisfying the axioms of linearity, such as those presented in Ref.~\cite{Devaud2001}. Throughout this work, both real and complex vector spaces are employed, with complex vector spaces playing a central role in the formulation of quantum mechanics.
+
+In order to introduce geometric notions such as lengths, angles, and orthogonality, vector spaces are often endowed with an additional structure known as an inner product. An inner product on $\mathcal{V}$ is a map
+\begin{equation}
+    \langle \cdot , \cdot \rangle : \mathcal{V} \times \mathcal{V} \to \mathbb{F},
+\end{equation}
+which in finite-dimensional spaces can be written as
+\begin{equation}
+    \langle \mathbf{v}, \mathbf{w} \rangle 
+    = \sum_{i=1}^{n} v_i^{*} w_i 
+    = \mathbf{v}^\dagger \mathbf{w},
+\end{equation}
+and satisfies the following properties for all $\mathbf{u}, \mathbf{v}, \mathbf{w} \in \mathcal{V}$ and $\alpha \in \mathbb{F}$:
+\begin{itemize}
+    \item \textbf{Linearity in the second argument:} $\langle \mathbf{u}, \alpha \mathbf{v} + \mathbf{w} \rangle = \alpha \langle \mathbf{u}, \mathbf{v} \rangle + \langle \mathbf{u}, \mathbf{w} \rangle$.
+    \item \textbf{Conjugate symmetry:} $\langle \mathbf{u}, \mathbf{v} \rangle = \langle \mathbf{v}, \mathbf{u} \rangle^{*}$.
+    \item \textbf{Positive definiteness:} $\langle \mathbf{v}, \mathbf{v} \rangle \geq 0$, with equality if and only if $\mathbf{v} = \mathbf{0}$.
+\end{itemize}
+
+The inner product induces a norm,
+\begin{equation}
+    \|\mathbf{v}\| = \sqrt{\langle \mathbf{v}, \mathbf{v} \rangle},
+\end{equation}
+which provides a natural notion of length and distance between vectors and forms the basis for the geometric and analytical structures employed in the following chapters. This norm satisfies:
+
+\begin{enumerate}
+    \item \textbf{Homogeneity:} $\|\alpha \mathbf{v}\| = |\alpha| \|\mathbf{v}\|$.
+    \item \textbf{Triangle inequality:} $\|\mathbf{v} + \mathbf{w}\| \le \|\mathbf{v}\| + \|\mathbf{w}\|$.
+\end{enumerate}
+
+In finite-dimensional spaces, the most commonly used norms are the $p$-norms. For a vector $\mathbf{v} \in \mathbb{F}^n$, the $p$-norm is defined as
+\begin{equation}
+    \|\mathbf{v}\|_p = \left( \sum_{i=1}^{n} |v_i|^p \right)^{1/p}, 
+    \qquad 1 \le p < \infty,
+\end{equation}
+and
+\begin{equation}
+    \|\mathbf{v}\|_\infty = \max_{1 \le i \le n} |v_i|.
+\end{equation}
+
+A particularly important case is the Euclidean norm ($p=2$), which is induced by the inner product and possesses a clear geometric interpretation in terms of lengths and angles.
+
+\paragraph{Distances}
+
+A norm naturally induces a metric (or distance function) on $\mathcal{V}$ defined by
+\begin{equation}
+    d(\mathbf{v}, \mathbf{w}) = \|\mathbf{v} - \mathbf{w}\|.
+\end{equation}
+
+This distance satisfies the standard metric properties:
+\begin{enumerate}
+    \item $d(\mathbf{v}, \mathbf{w}) \ge 0$,
+    \item $d(\mathbf{v}, \mathbf{w}) = 0$ if and only if $\mathbf{v} = \mathbf{w}$,
+    \item $d(\mathbf{v}, \mathbf{w}) = d(\mathbf{w}, \mathbf{v})$,
+    \item $d(\mathbf{v}, \mathbf{u}) \le d(\mathbf{v}, \mathbf{w}) + d(\mathbf{w}, \mathbf{u})$.
+\end{enumerate}
+
+Distances quantify approximation errors and deviations between elements of the space. In the context of this thesis, they play a fundamental role in defining loss functions, convergence criteria, and stability measures for learning algorithms and operator approximations.
+
+% ============================================================
+\section{Bases of vector spaces}
+\label{sec:basis}
+
+To represent vectors and linear operators in a concrete and computationally useful form, it is necessary to introduce the concept of a basis of a vector space. A basis provides a minimal set of vectors from which every element of the space can be expressed uniquely as a linear combination, thereby enabling coordinate representations and matrix formulations.
+
+Let $\mathcal{V}$ be a vector space over a field $\mathbb{F}$. A set of vectors $\{\mathbf{v}_1, \mathbf{v}_2, \dots, \mathbf{v}_n\} \subset \mathcal{V}$ is said to be \emph{linearly independent} if the linear combination
+\begin{equation}
+    \sum_{i=1}^{n} \alpha_i \mathbf{v}_i = \mathbf{0},
+\end{equation}
+implies $\alpha_i = 0$ for all $i$, with $\alpha_i \in \mathbb{F}$. If this condition is not satisfied, the set is said to be \emph{linearly dependent}. Linear independence ensures that no vector in the set can be expressed as a linear combination of the others.
+
+A basis of $\mathcal{V}$ is defined as a linearly independent set of vectors that spans the entire space. That is, every vector $\mathbf{v} \in \mathcal{V}$ can be written uniquely as
+\begin{equation}
+    \mathbf{v} = \sum_{i=1}^{n} v_i \mathbf{v}_i,
+\end{equation}
+where $\{v_i\}$ are the coordinates of $\mathbf{v}$ with respect to the chosen basis. The number of elements in a basis defines the dimension of the vector space.
+
+In finite-dimensional vector spaces, all bases contain the same number of elements. Once a basis is fixed, vectors and linear operators admit concrete representations in terms of column vectors and matrices, respectively. This construction forms the foundation for the operator and matrix-based formulations employed throughout this thesis, particularly in the context of quantum mechanics and deep learning models.
+
+% ============================================================
+\section{Bracket notation and Hilbert spaces}
+\label{sec:brackets_hilbert}
+
+In quantum mechanics, it is customary to represent vectors and linear mappings using the bracket notation introduced by Dirac. This notation provides a compact and expressive language that is particularly well suited for operator-based formulations and will be adopted throughout this thesis. The definition of linear functionals and the associated dual space follows the presentation in Ref.~\cite{Axler2015}.
+
+Let $\mathcal{V}$ be a complex vector space. A \emph{linear functional} on $\mathcal{V}$ is defined as a linear map
+\begin{equation}
+    f : \mathcal{V} \to \mathbb{C},
+\end{equation}
+which assigns a complex number to each vector in $\mathcal{V}$ while preserving linearity. Linear functionals naturally arise whenever scalar quantities are associated with vectors, such as projections, expectation values, or inner products.
+
+The set of all linear functionals on $\mathcal{V}$ forms a vector space itself, known as the \emph{dual space} of $\mathcal{V}$ and denoted by $\mathcal{V}^\ast$,
+\begin{equation}
+    \mathcal{V}^\ast = \{ f : \mathcal{V} \to \mathbb{C} \mid f \text{ is linear} \}.
+\end{equation}
+Elements of the dual space act on vectors to produce scalar values and play a fundamental role in the formulation of quantum mechanics.
+
+Once a basis of $\mathcal{V}$ is fixed, vectors admit a coordinate representation as column vectors, while linear functionals in the dual space are naturally represented as row vectors. This distinction reflects their different algebraic roles: vectors represent elements of the space itself, whereas linear functionals act on vectors to produce scalars. In this representation, the action of a functional on a vector corresponds to the matrix product between a row vector and a column vector, yielding a scalar. It is important to emphasize that this row--column distinction is a feature of the chosen representation and not of the abstract definitions of $\mathcal{V}$ and $\mathcal{V}^\ast$.
+
+When $\mathcal{V}$ is endowed with an inner product, each vector $\ket{v} \in \mathcal{V}$ naturally defines a corresponding linear functional through the mapping
+\begin{equation}
+    \ket{u} \mapsto \braket{v}{u}.
+\end{equation}
+This construction establishes a one-to-one correspondence between vectors in $\mathcal{V}$ and elements of the dual space $\mathcal{V}^\ast$, allowing vectors and linear functionals to be treated within a unified framework.
+
+Within Dirac's notation, vectors in $\mathcal{V}$ are denoted by \emph{kets} $\ket{v}$, while the associated linear functionals in $\mathcal{V}^\ast$ are denoted by \emph{bras} $\bra{v}$. The inner product between two vectors $\ket{u}$ and $\ket{v}$ is written as
+\begin{equation}
+    \braket{u}{v},
+\end{equation}
+which is linear in its second argument and conjugate linear in its first, in accordance with the conventions adopted in quantum mechanics.
+
+A complex vector space equipped with an inner product and complete with respect to the norm induced by that inner product, that is, such that every Cauchy sequence converges to an element of the space, is called a \emph{Hilbert space}. In this work, all Hilbert spaces are assumed to be finite-dimensional. As a consequence, completeness is automatically guaranteed, and no technical distinction between inner-product spaces and Hilbert spaces is required.
+
+The Hilbert space formalism provides the natural mathematical setting for the description of quantum states and linear operators. At the same time, its finite-dimensional structure enables a direct correspondence with matrix representations and numerical implementations, which is essential for the learning-based approaches developed in the subsequent chapters.
+
+% ============================================================
+\section{Linear operators and matrix representations}
+\label{sec:linear_operators}
+
+A natural extension of the concept of vector spaces is given by linear operators acting on them. A linear operator is a map
+\begin{equation}
+    A : \mathcal{V} \to \mathcal{V},
+\end{equation}
+which associates to each vector in the vector space another vector in the same space. Linearity requires that, for all $\ket{v}, \ket{w} \in \mathcal{V}$ and scalars $\alpha, \beta \in \mathbb{F}$,
+\begin{equation}
+    A\bigl(\alpha \ket{v} + \beta \ket{w}\bigr)
+    =
+    \alpha A\ket{v} + \beta A\ket{w}.
+\end{equation}
+
+Once a basis $\{\ket{i}\}_{i=1}^{n}$ of the $n$-dimensional vector space $\mathcal{V}$ is fixed, any linear operator admits a matrix representation with respect to that basis. The matrix elements of the operator $A$ are defined by
+\begin{equation}
+    A_{ij} \equiv \mel{i}{A}{j},
+\end{equation}
+which fully characterize the action of the operator. Indeed, the action of $A$ on an arbitrary vector $\ket{v} = \sum_j v_j \ket{j}$ can be written as
+\begin{equation}
+    A\ket{v}
+    =
+    \sum_{i,j} \mel{i}{A}{j} \, v_j \ket{i},
+\end{equation}
+showing explicitly that the abstract operator action corresponds, in a chosen basis, to standard matrix multiplication.
+
+This correspondence allows linear operators to be treated equivalently as matrices acting on column vectors of components, while preserving the basis-independent operator formulation. Throughout this work, operator expressions are written in basis-independent form whenever possible, with matrix representations introduced only when required for explicit calculations or numerical implementations.
+
+In a fixed orthonormal basis, that is, a basis whose elements are normalized and mutually orthogonal, the adjoint operator corresponds to the conjugate transpose of the matrix representation of $A$. Explicitly, the matrix elements of the adjoint operator satisfy
+\begin{equation}
+    \mel{i}{A^\dagger}{j} = \mel{j}{A}{i}^\ast.
+\end{equation}
+
+Operators satisfying $A = A^\dagger$ are called \emph{Hermitian} and play a fundamental role in quantum mechanics, where they represent physical observables. In contrast, operators obeying
+\begin{equation}
+    A^\dagger A = A A^\dagger = \id
+\end{equation}
+are called \emph{unitary} and describe reversible transformations that preserve inner products and norms. As a consequence, unitary operators generate norm-preserving dynamics and constitute the mathematical framework for the time evolution of closed quantum systems.
+
+Within the scope of this thesis, linear operators provide a unified language for describing quantum states, observables, and dynamical generators. At the same time, their matrix representations enable direct connections with numerical methods and learning-based models, which are essential for the computational approaches developed in the subsequent chapters.
+
+% ============================================================
+\section{Spectral decomposition}
+\label{sec:spectral-decomposition}
+
+Since a vector space generally admits infinitely many possible bases, it is often advantageous to select a basis that is naturally adapted to the linear transformations acting on the space. In this context, the spectral decomposition provides a particularly useful representation, as it expresses a linear operator in terms of its eigenvectors, which define invariant directions under the action of the operator. When such a decomposition exists, the eigenvectors form a distinguished basis that diagonalizes the operator and reveals its intrinsic structure.
+
+Given a linear operator $A : \mathcal{V} \to \mathcal{V}$, a nonzero vector $\ket{v} \in \mathcal{V}$ is called an eigenvector of $A$ with corresponding eigenvalue $\lambda \in \mathbb{C}$ if it satisfies
+\begin{equation}
+    A \ket{v} = \lambda \ket{v}.
+\end{equation}
+Eigenvectors characterize directions that are left invariant by the action of the operator and play a central role in the analysis of linear transformations.
+
+When the operator $A$ is Hermitian, its spectral properties exhibit particularly strong structure. In finite-dimensional Hilbert spaces, Hermitian operators possess real eigenvalues and admit a complete set of eigenvectors. Moreover, eigenvectors associated with distinct eigenvalues are orthogonal with respect to the inner product. As a consequence, the eigenvectors of a Hermitian operator can be chosen to form an orthonormal basis of the space.
+
+This property allows the operator to be expressed in terms of mutually orthogonal projectors. In particular, any Hermitian operator $A$ admits a spectral decomposition of the form
+\begin{equation}
+    A = \sum_i \lambda_i \ket{i}\bra{i},
+\end{equation}
+where $\{\lambda_i\}$ are the real eigenvalues of $A$ and $\{\ket{i}\}$ is an orthonormal basis of eigenvectors. Each term $\ket{i}\bra{i}$ represents an orthogonal projector onto the one-dimensional subspace spanned by the corresponding eigenvector.
+
+The spectral decomposition provides a basis-independent characterization of the operator, revealing its action as a weighted sum of projections along mutually orthogonal directions. In quantum mechanics, this decomposition acquires direct physical significance: Hermitian operators represent observables, the eigenvalues correspond to possible measurement outcomes, and the associated projectors encode the idealized state-update rule induced by measurements.
+
+In the context of this thesis, the spectral decomposition plays a fundamental role in the analysis of quantum states, density operators, and dynamical generators, and constitutes a key mathematical tool for both analytical developments and numerical implementations.
+
+% ============================================================
+\section{Matrix exponential}
+\label{sec:exp_matrix}
+
+The matrix exponential is one of the central mathematical tools for describing continuous transformations and time evolution in Physics. In Quantum Mechanics, in particular, evolution operators are naturally expressed as exponentials of linear operators.
+
+Although writing an exponential with a matrix in the exponent may initially appear formal, it is rigorously defined through the Taylor series expansion of the exponential function. For a general square matrix $A \in \mathbb{C}^{d \times d}$, the matrix exponential is defined as
+
+\begin{equation}
+    e^A = \sum_{n=0}^{\infty} \frac{A^n}{n!},
+\end{equation}
+
+where $A^0 = \mathbb{I}$ and $A^n$ denotes the $n$-th matrix power. Since the series converges absolutely for all finite matrices, the matrix exponential is well defined for any finite-dimensional linear operator.
+
+\paragraph{Spectral representation}
+If $A$ is diagonalizable, the computation of matrix functions becomes particularly simple. Suppose
+\begin{equation}
+    A = \sum_i \lambda_i \ket{i}\bra{i},
+\end{equation}
+where $\{\ket{i}\}$ is an orthonormal basis of eigenvectors and $\lambda_i$ are the corresponding eigenvalues. Then, for any analytic function $f$, we define
+\begin{equation}
+    f(A) = \sum_i f(\lambda_i)\ket{i}\bra{i}.
+\end{equation}
+
+In particular, the exponential of $A$ can be written as
+\begin{equation}
+    e^A = \sum_i e^{\lambda_i} \ket{i}\bra{i}.
+\end{equation}
+
+This result follows directly from substituting the spectral decomposition of $A$ into the Taylor series definition.
+
+\paragraph{Hermitian generators and unitary operators}
+A particularly important case arises when $A$ is Hermitian, i.e., $A^\dagger = A$. In this situation, all eigenvalues $\lambda_i$ are real. Consider now the operator
+\begin{equation}
+    U = e^{-iA}.
+\end{equation}
+
+Using the spectral representation,
+\begin{equation}
+    U = \sum_i e^{-i\lambda_i} \ket{i}\bra{i}.
+\end{equation}
+
+Since $|e^{-i\lambda_i}| = 1$ for real $\lambda_i$, we immediately see that
+\begin{equation}
+    U^\dagger U = \mathbb{I},
+\end{equation}
+which means that $U$ is unitary. More generally, for any matrix $A$,
+\begin{equation}
+    \left(e^A\right)^\dagger = e^{A^\dagger}.
+\end{equation}
+
+Therefore, if $A$ is Hermitian, $e^{iA}$ is unitary.
+
+\paragraph{Connection with dynamical evolution}
+The matrix exponential plays a fundamental role in the description of continuous dynamical processes generated by linear operators. Whenever the evolution of a system is governed by a linear generator $A$, the associated evolution operator can often be written in the form
+\begin{equation}
+    U(t) = e^{tA}.
+\end{equation}
+
+If the generator possesses suitable structural properties — for instance, if it is Hermitian or skew-Hermitian — the exponential inherits important features such as unitarity or norm preservation. These properties ensure mathematical consistency of the evolution and stability of the underlying dynamics.
+
+In many physical applications, including quantum mechanics, evolution operators naturally take this exponential form. When the generator depends explicitly on time, however, additional subtleties arise due to possible non-commutativity at different times. This leads to more sophisticated constructions, such as time-ordered exponentials and the Magnus expansion, which will be discussed in later sections.
+
+% ============================================================
+\section{Tensor products}
+\label{sec:tensor_products}
+
+In many areas of Physics and Mathematics, and particularly in Quantum Mechanics, the tensor product provides the natural mathematical structure to describe composite systems. When two subsystems are combined, their corresponding vector spaces are not added but rather tensored, producing a larger space capable of encoding correlations and non-classical features.
+
+Let $V$ and $W$ be vector spaces over the same field $\mathbb{F}$. The tensor product space, denoted by $V \otimes W$, is a new vector space together with a bilinear map
+\[
+\otimes : V \times W \longrightarrow V \otimes W,
+\]
+such that for all $\mathbf{v}, \mathbf{v}' \in V$, $\mathbf{w}, \mathbf{w}' \in W$, and scalars $\alpha,\beta \in \mathbb{F}$, the following bilinearity conditions hold:
+\begin{align*}
+(\alpha \mathbf{v} + \beta \mathbf{v}') \otimes \mathbf{w}
+&= \alpha (\mathbf{v} \otimes \mathbf{w}) + \beta (\mathbf{v}' \otimes \mathbf{w}), \\
+\mathbf{v} \otimes (\alpha \mathbf{w} + \beta \mathbf{w}')
+&= \alpha (\mathbf{v} \otimes \mathbf{w}) + \beta (\mathbf{v} \otimes \mathbf{w}').
+\end{align*}
+
+Elements of the form $\mathbf{v} \otimes \mathbf{w}$ are called \emph{simple tensors}. A general element of $V \otimes W$ is a finite linear combination of simple tensors,
+\[
+\mathbf{z} = \sum_{k} \mathbf{v}_k \otimes \mathbf{w}_k.
+\]
+
+If $\{\mathbf{e}_i\}_{i=1}^{n}$ is a basis of $V$ and $\{\mathbf{f}_j\}_{j=1}^{m}$ is a basis of $W$, then the set
+\[
+\{\mathbf{e}_i \otimes \mathbf{f}_j\}_{i,j}
+\]
+forms a basis of $V \otimes W$. Consequently,
+\[
+\dim(V \otimes W) = \dim(V)\,\dim(W).
+\]
+
+In finite-dimensional spaces with column-vector representations, if
+\[
+\mathbf{v} =
+\begin{pmatrix}
+v_1 \\
+\vdots \\
+v_n
+\end{pmatrix},
+\qquad
+\mathbf{w} =
+\begin{pmatrix}
+w_1 \\
+\vdots \\
+w_m
+\end{pmatrix},
+\]
+their tensor product (also known as the Kronecker product in matrix representation) is given by
+\[
+\mathbf{v} \otimes \mathbf{w} =
+\begin{pmatrix}
+v_1 \mathbf{w} \\
+v_2 \mathbf{w} \\
+\vdots \\
+v_n \mathbf{w}
+\end{pmatrix}
+=
+\begin{pmatrix}
+v_1 w_1 \\
+\vdots \\
+v_1 w_m \\
+v_2 w_1 \\
+\vdots \\
+v_n w_m
+\end{pmatrix}.
+\]
+
+This construction naturally extends to linear operators. If $A : V \to V$ and $B : W \to W$ are linear maps, their tensor product $A \otimes B$ acts on simple tensors as
+\begin{equation}
+    (A \otimes B)(\mathbf{v} \otimes \mathbf{w}) = (A\mathbf{v}) \otimes (B\mathbf{w}),
+\end{equation}
+and extends linearly to the entire space.
+
+The tensor product is therefore the fundamental algebraic mechanism that allows one to construct structured, high-dimensional spaces from simpler building blocks. In the context of composite quantum systems, this structure becomes essential and will be introduced formally in the next chapter.
+
+% ============================================================
+\section{Differentiation with respect to vectors and matrices}
+\label{sec:differentiation}
+
+A central task in Machine Learning and Deep Learning consists of optimizing a large number of parameters in order to construct models capable of approximating complex mappings. This optimization process requires evaluating and differentiating functions whose arguments are vectors or matrices. Since the models employed throughout this thesis are formulated in finite-dimensional spaces, we restrict our discussion to this setting.
+
+\paragraph{Derivatives with respect to vectors}
+Let $f : \mathbb{F}^n \to \mathbb{F}$ be a scalar-valued function of a vector 
+$\mathbf{x} = (x_1, \dots, x_n)^\top$. 
+If $f$ is differentiable with respect to each component, its derivative is described by the \emph{gradient}, defined as
+\begin{equation}
+    \nabla f(\mathbf{x}) :=
+    \begin{pmatrix}
+        \dfrac{\partial f}{\partial x_1} \\
+        \vdots \\
+        \dfrac{\partial f}{\partial x_n}
+    \end{pmatrix}.
+\end{equation}
+
+The gradient encodes the direction of steepest ascent of the function. In optimization problems, this object determines how parameters must be updated in order to minimize (or maximize) a given objective function. Iterative schemes such as gradient descent rely precisely on this geometric interpretation.
+
+More generally, if $\mathbf{F} : \mathbb{F}^n \to \mathbb{F}^m$ is a vector-valued function, its derivative is represented by the \emph{Jacobian matrix},
+\begin{equation}
+    J_{\mathbf{F}}(\mathbf{x})
+    =
+    \left(
+    \frac{\partial F_i}{\partial x_j}
+    \right)_{i,j}.
+\end{equation}
+The Jacobian provides the best linear approximation of $\mathbf{F}$ around a point and generalizes the usual one-dimensional derivative to higher dimensions. In local coordinates, it describes how small variations in the input propagate to variations in the output.
+
+\paragraph{Matrix derivatives}
+In many applications, the parameters of interest are arranged in matrix form. Let $f : \mathbb{F}^{m \times n} \to \mathbb{F}$ be a scalar function of a matrix $X = (X_{ij})$. The derivative of $f$ with respect to $X$ is defined componentwise as
+\begin{equation}
+    \left( \frac{\partial f}{\partial X} \right)_{ij} 
+    = 
+    \frac{\partial f}{\partial X_{ij}},
+\end{equation}
+producing a matrix of the same size as $X$. 
+
+In practice, matrix derivatives are most conveniently handled using trace identities. For instance, if $A$ is a constant matrix of compatible dimension, the identity
+\begin{equation}
+    \frac{\partial}{\partial X} \mathrm{Tr}(A^\top X) = A
+\end{equation}
+follows directly from the linearity of the trace and provides a compact way to compute gradients.
+
+Two frequently used examples illustrate this approach. The Frobenius norm of a matrix is defined by
+\begin{equation}
+    \|X\|_F = \sqrt{\mathrm{Tr}(X^\top X)},
+\end{equation}
+and its squared value satisfies
+\begin{equation}
+    \frac{\partial}{\partial X} \|X\|_F^2 = 2X.
+\end{equation}
+Similarly, for a quadratic form of the type $\mathrm{Tr}(X^\top A X)$, one obtains
+\begin{equation}
+    \frac{\partial}{\partial X} \mathrm{Tr}(X^\top A X) 
+    = 
+    A X + A^\top X.
+\end{equation}
+These identities appear repeatedly in optimization problems involving least-squares objectives and operator learning.
+
+\paragraph{Differentials and linear approximation}
+A conceptually cleaner formulation of derivatives in finite-dimensional spaces is given by the \emph{differential}. The differential of a function $f$ at a point $X$ in the direction of a perturbation $H$ is defined as
+\begin{equation}
+    df(X)[H] 
+    = 
+    \left. \frac{d}{d\epsilon} f(X + \epsilon H) \right|_{\epsilon=0}.
+\end{equation}
+
+This definition emphasizes that the derivative is fundamentally a linear map acting on perturbations. If $f$ is differentiable, there exists a matrix $\nabla_X f$ such that
+\begin{equation}
+    df(X)[H] 
+    = 
+    \mathrm{Tr}\!\left( (\nabla_X f)^\top H \right),
+\end{equation}
+which identifies $\nabla_X f$ as the gradient of $f$ with respect to $X$.
+
+This differential viewpoint is particularly powerful when dealing with operator-valued functions, variational formulations, and loss functions defined on spaces of matrices. It provides a compact and coordinate-independent framework that will be essential in the derivation of learning rules and operator optimization procedures developed in later chapters.
+
+% ============================================================
+\section{Summary}
+In this chapter, we introduced the finite-dimensional linear algebraic framework that underpins the theoretical and computational developments presented in the remainder of this thesis. Rather than pursuing a fully general or abstract treatment, the exposition was intentionally restricted to the structures that are directly required for quantum information theory and deep learning models.
+
+We began with vector spaces over $\mathbb{R}$ and $\mathbb{C}$, emphasizing inner products, induced norms, and metric structures. These notions provide the geometric foundation necessary to quantify lengths, angles, orthogonality, and approximation errors — concepts that are central both to quantum state representations and to the definition of loss functions in learning problems.
+
+The introduction of bases enabled coordinate representations of vectors and linear maps, leading naturally to matrix formulations. Through Dirac's bracket notation and the identification between vectors and elements of the dual space, we established the Hilbert space framework that serves as the mathematical setting for quantum states and observables.
+
+Linear operators were then examined both abstractly and through their matrix representations. Special attention was given to Hermitian and unitary operators, whose structural properties play a fundamental role in quantum mechanics and in norm-preserving transformations. The spectral decomposition was presented as a powerful tool for revealing intrinsic operator structure and for defining analytic functions of operators, including the matrix exponential.
+
+The matrix exponential was introduced as the natural mechanism for generating continuous linear transformations. Its spectral characterization and its relation to unitary dynamics provide the mathematical foundation for describing time evolution processes, which will be further developed in subsequent chapters.
+
+We then introduced tensor products as the algebraic construction that allows composite systems to be modeled within a unified vector space framework. This structure is essential for describing multipartite quantum systems and for understanding the exponential growth of state-space dimension.
+
+Finally, we presented differentiation with respect to vectors and matrices, emphasizing gradients, Jacobians, trace-based identities, and the differential formulation. These tools constitute the mathematical backbone of optimization procedures and learning algorithms that operate on high-dimensional parameter spaces.
+
+Collectively, the concepts developed in this chapter establish a unified linear-algebraic language in which quantum mechanics and machine learning can be expressed within the same formal framework. This shared structure enables the analytical derivations and computational implementations that will be developed in the following chapters.

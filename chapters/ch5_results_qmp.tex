@@ -1,0 +1,359 @@
+\chapter{Machine Learning Approach to Reconstruct Density Matrices from Quantum Marginals}
+\label{ch:results-qmp}
+
+This chapter presents the second main application developed in this thesis: a machine-learning-based approach to a central aspect of the Quantum Marginal Problem (QMP), namely the reconstruction of a global density matrix compatible with a given set of quantum marginals. The results reported here correspond to the work published in \textit{Machine Learning: Science and Technology}~\cite{uzcategui2025marginals}, developed in collaboration with D.~Uzcategui-Contreras, S.~Niklitschek, and A.~Delgado.
+
+The method integrates a quantum marginal imposition technique with convolutional denoising autoencoders (CDAEs), with a loss function carefully designed to enforce essential physical constraints, including Hermiticity, positivity, and normalization. The theoretical ingredients were introduced in earlier chapters: the density-operator formalism, composite systems, the partial trace, and the quantum marginal problem in Chapter~2 (Sections~2.2 and 2.3), the fidelity between density matrices in Section~2.6, and convolutional neural networks, autoencoders, and loss-function design in Chapter~3.
+
+%-----------------------------------------------------------
+\section{Problem statement}
+\label{sec:qmp-problem}
+
+As discussed in Section~2.3, the Quantum Marginal Problem arises as a fundamental challenge in quantum theory: given a set of reduced density matrices describing subsystems of a multipartite system, under what conditions are they consistent? Here, consistent means that there exists a global density matrix, describing the entire system, that contains the reduced density matrices. This question naturally leads to several others: Can such a global state be uniquely determined? How is entanglement reflected in the marginals? What is the minimal information required to reconstruct the global state?
+
+The consistency problem of the QMP is a decision problem that was shown to be complete for the Quantum Merlin--Arthur (QMA) complexity class~\cite{liu2006consistency, broadbent2022qma}, highlighting its computational intractability in the general case. Solving the QMP would have profound implications. For example, it could enable more efficient calculations of the ground states of local Hamiltonians~\cite{liu2007nrep}. The QMP also plays a central role in quantum chemistry, where it is referred to as the $N$-representability problem. Understanding the conditions under which reduced wave functions of electron pairs are compatible with an $N$-electron system could lead to more efficient calculations of binding energies~\cite{judd2001coulson}. However, the $N$-representability problem is also known to be QMA complete, reflecting its computational difficulty~\cite{liu2007nrep}.
+
+Previous works have addressed special cases of the QMP. For example, Klyachko provided the necessary and sufficient conditions for compatibility of 1-body marginals with a global pure state in the nonoverlapping case~\cite{klyachko2004}, while other studies have explored the uniqueness of pure global states determined by reduced marginals~\cite{linden2002, diosi2004, wyderka2017}. Additionally, symmetric instances of the QMP have been formulated as semidefinite programming (SDP) problems~\cite{aloy2020}.
+
+Machine learning approaches have been proposed for problems in quantum many-body physics~\cite{carleo2017, carleo2019, huang2022provably, requena2023}. Deep learning models have been shown to learn $N$-representability conditions from one- and two-electron systems and predict properties of larger systems~\cite{sagersmith2022, delgadogranados2025, shao2023}. In this chapter, we introduce a deep-learning-based approach to approximate solutions to the QMP. The method combines the Marginal Imposition Operator (MIO)~\cite{uzcategui2022mio}, a technique designed to impose arbitrary quantum marginals on a matrix, with a CDAE architecture. This combination enables the construction of physically valid quantum states (i.e.\ positive semidefinite with trace one) that are compatible with a prescribed set of marginals, even in the presence of noise or initial inconsistency.
+
+The architecture is capable of handling mixed quantum states for systems of 3 to 8 qubits. Additionally, we explore transfer learning between models trained on different numbers of qubits, showing that a model trained on 3-qubit systems can be adapted to systems with up to 8 qubits with limited retraining. This indicates that the network captures structural features of the compatibility conditions that are not specific to a fixed Hilbert-space dimension.
+
+%-----------------------------------------------------------
+\section{The problem of compatibility}
+\label{sec:qmp-compatibility}
+
+A quantum marginal $\sigma_{\mathcal{J}}$ is the reduced quantum state of a subsystem labeled by $\mathcal{J}$, derived from a larger system with global state $\rho_{\mathcal{I}}$. Let $\mathcal{I}$ denote a set of labels (e.g.\ $\mathcal{I} = 1, \ldots, N$) representing the components of an $N$-body physical system. The subset $\mathcal{J} \subset \mathcal{I}$ corresponds to the components of a reduced subsystem. When the global state $\rho_{\mathcal{I}}$ is known, the marginal state $\sigma_{\mathcal{J}}$ can be obtained via the partial trace operation introduced in Section~2.3 as
+\begin{equation}
+\label{eq:qmp-partial-trace}
+\sigma_{\mathcal{J}} = \tr_{\mathcal{J}^c} \qty[\rho_{\mathcal{I}}]
+= \sum_{j} \qty( \bra{j^c} \otimes \id_{\mathcal{J}} )\, \rho_{\mathcal{I}}\, \qty( \ket{j^c} \otimes \id_{\mathcal{J}} ),
+\end{equation}
+where $\mathcal{J} \cup \mathcal{J}^c = \mathcal{I}$. In Eq.~\eqref{eq:qmp-partial-trace}, the identity operator $\id_{\mathcal{J}}$ acts on the subsystem $\mathcal{J}$, while $\{\ket{j^c}\}$ is an orthonormal basis tracing the complement $\mathcal{J}^c$.
+
+Let us consider now the opposite problem. That is, given a set of $M$ quantum marginals $\{\sigma_{\mathcal{J}_\alpha}\}_{\alpha=1}^{M}$, we would like to know whether there is a global quantum state $\rho_{\mathcal{I}}$ such that $\sigma_{\mathcal{J}_\alpha} = \tr_{\mathcal{J}_\alpha^c}[\rho_{\mathcal{I}}]$ for all $\alpha = 1, \ldots, M$. This problem can be stated as the SDP~\cite{skrzypczyk2023sdp}
+\begin{equation}
+\label{eq:qmp-sdp}
+\begin{aligned}
+\text{maximize} \quad & \tr(\rho_{\mathcal{I}}) \\
+\text{subject to} \quad & \tr_{\mathcal{J}_\alpha^c}[\rho_{\mathcal{I}}] = \sigma_{\mathcal{J}_\alpha}, \quad \alpha = 1, \ldots, M, \\
+& \rho_{\mathcal{I}} \succeq 0.
+\end{aligned}
+\end{equation}
+There are algorithms, such as interior point methods, that are highly efficient for solving SDPs. However, the runtime and memory requirements of these methods scale with the size of the matrix and the number of constraints~\cite{jiang2020sdp, zhang2018sdp}, making them impractical for large-scale instances of the problem. An iterative algorithm based on the MIO, introduced in the next subsection, was proposed in Ref.~\cite{uzcategui2022mio}. Nevertheless, determining the computational complexity of this approach remains a challenging task.
+
+\subsection{The Marginal Imposition Operator}
+\label{sec:qmp-mio}
+
+The problem of determining a global quantum state from a given set of quantum marginals has been previously studied in Ref.~\cite{uzcategui2022mio}, where the main tool introduced is the MIO. Let $\sigma_{\mathcal{J}}$ be a $|\mathcal{J}|$-party quantum state, with $\mathcal{J} \subset \mathcal{I}$. Then, the MIO is defined as follows:
+\begin{equation}
+\label{eq:qmp-mio}
+\mathcal{Q}_{\mathcal{J}}(\tilde{\rho}_{\mathcal{I}}) :=
+\tilde{\rho}_{\mathcal{I}}
+- \rho_{\mathcal{J}} \otimes \frac{\id_{\mathcal{J}^c}}{\abs{\mathcal{J}^c}}
++ \sigma_{\mathcal{J}} \otimes \frac{\id_{\mathcal{J}^c}}{\abs{\mathcal{J}^c}},
+\end{equation}
+where $\tilde{\rho}_{\mathcal{I}}$ is an $|\mathcal{I}|$-party quantum state, which can be chosen at random or in any convenient fashion, and $\rho_{\mathcal{J}} = \tr_{\mathcal{J}^c}[\tilde{\rho}_{\mathcal{I}}]$.
+
+It is easy to see that $\tr_{\mathcal{J}^c}[\mathcal{Q}_{\mathcal{J}}(\tilde{\rho}_{\mathcal{I}})] = \sigma_{\mathcal{J}}$. In simple terms, the MIO enforces the marginal $\sigma_{\mathcal{J}}$ onto $\tilde{\rho}_{\mathcal{I}}$, although $\mathcal{Q}_{\mathcal{J}}(\tilde{\rho}_{\mathcal{I}})$ may not necessarily represent a valid quantum state. Despite this, the MIO exhibits several interesting properties:
+\begin{enumerate}[label=(\roman*)]
+\item Hermiticity: $\mathcal{Q}_{\mathcal{J}}(\tilde{\rho}_{\mathcal{I}}) = \mathcal{Q}_{\mathcal{J}}(\tilde{\rho}_{\mathcal{I}})^\dagger$;
+\item Trace preservation: $\tr[\mathcal{Q}_{\mathcal{J}}(\tilde{\rho}_{\mathcal{I}})] = 1$.
+\end{enumerate}
+
+More generally, for a given set $\{\sigma_{\mathcal{J}_\alpha}\}_{\alpha=1}^{M}$, the composition $\mathcal{Q}_{\mathcal{J}_M} \circ \cdots \circ \mathcal{Q}_{\mathcal{J}_1}(\tilde{\rho}_{\mathcal{I}})$ contains all the quantum marginals. That is,
+\begin{equation}
+\label{eq:qmp-mio-composition}
+\sigma_{\mathcal{J}_\alpha} = \tr_{\mathcal{J}_\alpha^c}\qty[ \mathcal{Q}_{\mathcal{J}_M} \circ \cdots \circ \mathcal{Q}_{\mathcal{J}_1}(\tilde{\rho}_{\mathcal{I}}) ],
+\end{equation}
+for all $\alpha = 1, \ldots, M$. An obvious condition for Eq.~\eqref{eq:qmp-mio-composition} to be satisfied is that for every pair $\sigma_{\mathcal{J}_\beta}, \sigma_{\mathcal{J}_\nu} \in \{\sigma_{\mathcal{J}_\alpha}\}_{\alpha=1}^{M}$, the quantum states $\sigma_{\mathcal{J}_\beta \cap \mathcal{J}_\nu}$ in the overlapping subsystems must coincide when $\mathcal{J}_\beta \cap \mathcal{J}_\nu \neq \emptyset$.
+
+However, there are no guarantees that $\mathcal{Q}_{\mathcal{J}_M} \circ \cdots \circ \mathcal{Q}_{\mathcal{J}_1}(\tilde{\rho}_{\mathcal{I}}) \succeq 0$. Ensuring positivity may depend on the choice of $\tilde{\rho}_{\mathcal{I}}$, as numerically demonstrated in Ref.~\cite{uzcategui2022mio}, among other factors. Although one could attempt to find the closest quantum state~\cite{guta2020}, this approach incurs the computational cost of an eigendecomposition. In the next section, we introduce the CDAE, a machine learning model that offers a potential solution to this problem.
+
+%-----------------------------------------------------------
+\section{Model description}
+\label{sec:qmp-model}
+
+\subsection{Density matrices as images}
+\label{sec:qmp-images}
+
+Machine learning has emerged as a powerful tool for image processing~\cite{wang2019imaging}, a field encompassing techniques designed to transform an image into another representation based on a specific objective. Examples of such transformations include resolution enhancement, noise reduction~\cite{scattarella2023}, image segmentation~\cite{suganyadevi2022}, and other feature-extraction methods. A central goal of image processing is to preserve essential information while enhancing the relevant features of the original image.
+
+A color image can be represented as a set of three matrices corresponding to the RGB color channels, each with the same dimensions, containing a fixed number of pixels in both height and width. This establishes a direct and intuitive correspondence between images and matrices. Convolutional Neural Networks (CNNs), introduced in Section~3.3, are designed to process precisely this kind of multi-array data, and many state-of-the-art models for denoising, segmentation, and feature extraction are built upon CNN architectures, including autoencoders, U-Nets, variational autoencoders, and SegNet.
+
+On the other hand, a fundamental object in quantum mechanics is the density matrix (cf.~Section~2.2), which encodes the information of a quantum system. These matrices consist of complex-valued elements and must satisfy specific mathematical properties: they must be positive semidefinite (PSD) and have unit trace; consequently, they are Hermitian. For a quantum system formed by $N$ qubits, the dimension of the space of density matrices grows exponentially with $N$.
+
+A density matrix can be decomposed into its real and imaginary components, forming a multiarray: a set of two real-valued matrices. This suggests a natural analogy between density matrices and images, which in turn implies that image-processing techniques may be adapted to quantum data. If CNNs are effective at extracting spatial features from images, it is reasonable to explore their application in learning quantum states.
+
+However, this relationship is not straightforward. The convolutional layers of CNNs exhibit local connectivity, where each neuron is linked only to its neighboring units, in contrast with fully connected layers (cf.~Section~3.3). This localized connectivity is particularly beneficial in image processing, as it allows the extraction of relevant features while preserving spatial relationships, without requiring a global representation of the entire image. Quantum density matrices do not inherently exhibit this locality-based structure. However, in the QMP we are primarily interested in global quantum states and their marginals, which are obtained through partial trace operations. This bears a conceptual similarity to the locality-based feature extraction performed by CNNs: while CNNs capture local structures within an image, partial traces extract relevant information from subsystems of a quantum state while maintaining a connection to the global system. This suggests that a CNN-based approach may be suitable for learning quantum states.
+
+One of the main advantages of deep learning models for image processing is their scalability, as they are designed to handle images containing thousands or even millions of pixels. This scalability is particularly relevant in quantum mechanics, where the Hilbert space grows exponentially with the number of qubits. In this work, we present results for systems between 3 and 8 qubits. Training models for larger quantum systems requires significantly higher computational resources; nevertheless, all the necessary tools for the further development of such models are provided, facilitating their application to more complex quantum systems.
+
+\subsection{The convolutional denoising autoencoder}
+\label{sec:qmp-cdae}
+
+Autoencoders are neural networks designed to learn efficient representations of data~\cite{Goodfellow2016}. They consist of two main components: an encoder function, $\vb{h} = f(\vb{x})$, which maps the input data $\vb{x}$ to a lower-dimensional \textit{latent representation} $\vb{h}$, and a decoder function, $\vb{r} = g(\vb{h})$, which reconstructs the original data from $\vb{h}$. A common application of autoencoders is image compression, where the encoder reduces an image to a compact latent representation, and the decoder reconstructs the image from this compressed form.
+
+Autoencoders aim to approximately reconstruct the input data, $\vb{r} \approx \vb{x}$, as achieving exact reconstruction is often impractical. However, the strength of autoencoders lies in the compressed representation they generate, which can be leveraged for tasks such as denoising, anomaly detection, and feature extraction. In many real-world applications, the input data $\vb{x}$ may be corrupted by noise or other distortions, resulting in a noisy version $\tilde{\vb{x}}$. Despite the presence of noise, $\tilde{\vb{x}}$ often retains valuable information about the original data. Denoising autoencoders~\cite{vincent2008} are a specialized type of autoencoder designed to learn a robust representation of $\vb{x}$ from noisy input data. This is achieved by minimizing a loss function that enforces the reconstructed output to align with the desired properties of $\vb{x}$. In quantum mechanics, denoising autoencoders have been successfully applied to quantum state tomography~\cite{barzili2021, danaci2021}.
+
+To address the quantum marginal compatibility problem introduced in Section~\ref{sec:qmp-compatibility}, we propose a CDAE architecture. To represent density matrices in a format suitable for the CDAE, we decompose them into two-channel tensors: one channel containing the real part and the other containing the imaginary part. This representation is analogous to how images are represented as multi-channel tensors, enabling the application of computer vision techniques such as CNNs~\cite{oshea2015} to address our problem.
+
+For $N$-qubit systems, each channel corresponds to a $2^N \times 2^N$ matrix. The full architectural specifications of the implemented model are detailed in Section~\ref{sec:qmp-architecture}, and the proof that the architecture supports any $N$-qubit system with $N > 2$ is given in Section~\ref{sec:qmp-channel-sizes}. Figure~\ref{fig:qmp-cdae} illustrates the proposed CDAE architecture: the encoder, responsible for extracting the latent representation, comprises the layers to the left of the latent representation in the figure, while the decoder, tasked with reconstructing the original data from the latent code, consists of the layers to the right.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.99\textwidth]{images/DA_architecture.png}
+  \caption[Illustration of the proposed CDAE architecture]{Illustration of the proposed CDAE architecture. The boxes represent tensors with dimensions specified as (number of channels) $\times$ height $\times$ width, indicated below each box. The operation applied to the tensor on the left is written above the arrow between two tensors, with the resulting tensor shown on the right. Since the Tanh activation function does not modify tensor dimensions, convolutional operations (Conv2D and TConv2D) are combined with the Tanh activation into single operations, denoted as $\mathrm{Tanh} \circ \mathrm{Conv2D}(\ldots)$ and $\mathrm{Tanh} \circ \mathrm{TConv2D}(\ldots)$. All boxes and operations to the left (right) of the latent representation correspond to the encoder (decoder). The leftmost box represents the input $\tilde{\vb{x}}$ of the CDAE, while the rightmost box represents its output $\vb{z}$.}
+  \label{fig:qmp-cdae}
+\end{figure}
+
+%-----------------------------------------------------------
+\section{Approach}
+\label{sec:qmp-approach}
+
+Let $\tilde{\vb{x}}$ and $\vb{z}$ be the input and output of the CDAE, respectively, such that $\vb{z} = g(f(\tilde{\vb{x}}))$. The input $\tilde{\vb{x}}$ is the two-channel representation of the corrupted density matrix $\tilde{X}$,
+\begin{equation}
+\label{eq:qmp-corrupted}
+\tilde{X} = \mathcal{Q}_{\mathcal{J}_M} \circ \cdots \circ \mathcal{Q}_{\mathcal{J}_1}(\rho),
+\end{equation}
+obtained by composing Eq.~\eqref{eq:qmp-mio} for a given set $\{\sigma_{\mathcal{J}_\alpha}\}_{\alpha=1}^{M}$ of quantum marginals, with $\rho$ serving as an initial seed state. The term ``corrupted'' refers to the presence of negative eigenvalues in the matrix $\tilde{X}$, which indicates that it is not a valid quantum state, although it still contains the quantum marginals, that is, $\sigma_{\mathcal{J}_\alpha} = \tr_{\mathcal{J}_\alpha^c}[\tilde{X}]$ for all $\alpha = 1, \ldots, M$. The output $\vb{z}$ is also a two-channel tensor, and its matrix representation $Z$ can be obtained by taking the first channel as the real part and the second channel as the imaginary part.
+
+In addition, we explore an approach that involves using the output of the CDAE as an initial seed for the MIO. Since the MIO is capable of reconstructing global states that match the given marginals with perfect fidelities but often suffers from the issue of producing unphysical outputs, this hybrid strategy could mitigate the problem. By providing a well-structured initial guess from the trained autoencoder, the MIO may produce physically valid density matrices more reliably.
+
+\subsection{Data generation}
+\label{sec:qmp-data}
+
+The set $\{\tilde{\vb{x}}_\beta, \mathcal{M}_\beta\}_{\beta=1}^{N_S}$ represents the training set, with $N_S$ denoting the number of samples, and $\mathcal{M}_\beta = \{\sigma_{\mathcal{J}_\alpha}\}_{\alpha=1}^{M}$. Each set $\mathcal{M}_\beta$ is obtained by calculating all $k$-body quantum marginals of an $N$-qubit density matrix $\rho^{(\beta)}$, where $\abs{\mathcal{M}_\beta} = \binom{N}{k}$. We choose $k = N-1$ to generate the data in all the cases presented in this work; however, the models trained in this way also work for $0 < k < N-1$, as demonstrated in the results section.
+
+We consider rank-$r$ density matrices $\rho^{(\beta)}$, generated according to the following procedure:
+\begin{enumerate}[label=(\roman*)]
+\item Randomly generate an integer $r$ from a uniform distribution in the interval $r_{\min} \leq r \leq 2^N$, where $r_{\min}$ is a pre-defined parameter.
+\item Generate a probability distribution vector $\vb{p}^\beta = (p_1^\beta, \ldots, p_r^\beta)^{\mathrm{T}}$.
+\item Sample $r$ pure states $\ket{\psi_i^\beta}$ from the Haar measure.
+\item Form the density matrix $\rho^{(\beta)} = \sum_{i=1}^{r} p_i^\beta \dyad{\psi_i^\beta}$.
+\end{enumerate}
+Thus, we generate $\rho^{(\beta)}$ and then, using the partial trace $\sigma_{\mathcal{J}_\alpha} = \tr_{\mathcal{J}_\alpha^c}\qty[\rho^{(\beta)}]$, we obtain the elements of $\mathcal{M}_\beta$. With $\mathcal{M}_\beta$, we find $\tilde{X}_\beta$ using Eq.~\eqref{eq:qmp-corrupted} and then its two-channel representation $\tilde{\vb{x}}_\beta$. This procedure is repeated $N_S$ times to form the training set.
+
+\subsection{The loss function}
+\label{sec:qmp-loss}
+
+To train the CDAE, we define a loss function that ensures that the output is a PSD matrix and compatible with the given quantum marginals. Let $Z$ be the matrix representation of the output $\vb{z}$ of the CDAE. We can decompose $Z$ into its polar form as $Z = UP$, where $U$ is a unitary matrix and $P$ is a PSD matrix. The loss function is given by
+\begin{equation}
+\label{eq:qmp-loss}
+\mathcal{L} = \epsilon\qty(\Re(U), \id) + \epsilon\qty(\Im(U), \vb{0})
++ \sum_{i}^{\abs{\mathcal{M}_\beta}} \epsilon\qty(\sigma_{\mathcal{J}_i}, z_{\mathcal{J}_i}),
+\end{equation}
+where $\epsilon(\cdot, \cdot)$ denotes the mean square error, $\id$ is the identity matrix, and $\vb{0}$ is the zero matrix. The first two terms in Eq.~\eqref{eq:qmp-loss} ensure that the output matrix $Z$ is PSD, while the third term accounts for the quantum marginals, with $z_{\mathcal{J}_i} = \tr_{\mathcal{J}_i^c}[Z]$ representing the output marginal. Although a term $\epsilon(\tr[Z], 1)$ could be explicitly included in Eq.~\eqref{eq:qmp-loss} to guarantee normalization, this constraint is approximately satisfied without the need to enforce it explicitly. The final output matrix can be renormalized as $Z/\tr[Z]$ to ensure exact normalization. Additionally, in practice, $Z$ is approximately Hermitian, which can be fixed by setting $Z = (Z + Z^\dagger)/2$, thus avoiding non-real eigenvalues.
+
+\subsection{Training and transfer learning}
+\label{sec:qmp-training}
+
+For training, the Adam optimizer was used with a learning rate of $10^{-4}$ and a batch size of 100 for all the cases presented. The model was implemented in PyTorch, and all numerical experiments were conducted on a workstation equipped with 125\,GB of RAM, an NVIDIA GeForce RTX 4090 GPU, and an AMD Ryzen Threadripper 7980X 64-core CPU. The complete code and instructions for reproduction are available in a GitHub repository.\footnote{\url{https://github.com/guerra-antonio/Learning-QM}}
+
+The architecture employed in this work demonstrates sufficient generalization capacity, successfully adapting to global quantum states ranging from 3 to 8 qubits without requiring significant structural modifications. As a result, there is no need to design new architectures or increase the model capacity for each case (e.g.\ by deepening the network or increasing the number of convolutional filters). This flexibility enables the use of transfer learning as a strategy for extending the model to systems with a higher number of qubits.
+
+Transfer learning allows us to initialize training for a model targeting $N$ qubits from a previously trained model with $N-1$ qubits, rather than training from scratch. Our results indicate that this approach substantially reduces both the training time and the amount of data required. During the transfer process, certain layers, typically the encoder, are frozen, i.e.\ their gradients are deactivated, and only selected layers (often in the decoder) are updated. We begin with a base model trained on 3-qubit global states. Once trained to an acceptable level of performance --- achieving fidelities of approximately 0.98 for a random case --- this model is used as a starting point for training a model for 4-qubit global states. In this case, it was sufficient to retrain only the final decoder layer, yielding fidelities of around 0.97 for a test case. This strategy is repeated to scale up the model. However, in some cases, retraining only the decoder was insufficient. For example, when transitioning from 4 to 5 qubits, retraining the full model was required to achieve average fidelities above 0.95 for randomly selected cases. Interestingly, for larger systems (6, 7, and 8 qubits), retraining only the decoder once again proved sufficient. In these cases, transfer learning from the immediately smaller model led to successful generalization, enabling high-fidelity global state reconstruction based on marginal inputs.
+
+These findings suggest a remarkable property of the network: the encoder appears to capture the relevant marginal information in a way that is transferable across different system sizes. This highlights the model's ability to internalize the underlying non-linear structure of the QMP and leverage it effectively across varying dimensional scales.
+
+%-----------------------------------------------------------
+\section{Results}
+\label{sec:qmp-results}
+
+In this section, we present the results of our experiments to evaluate the performance of the proposed CDAE in solving the task of finding a quantum state compatible with a given set of quantum marginals. We focus on two key metrics: the success rate and the accuracy. The success rate measures the fraction of outputs predicted by the model that are valid PSD matrices.
+
+To assess the accuracy of the predicted quantum marginals, we use the mean fidelity, denoted $F_{\mathrm{mean}}$, built upon the state fidelity introduced in Section~2.6. For each sample $\beta$ in the test set, we compute the average fidelity $F_\beta$ over all the marginals in that sample as
+\begin{equation}
+F_\beta = \frac{1}{\abs{\mathcal{M}_\beta}} \sum_{i=1}^{\abs{\mathcal{M}_\beta}} F\qty(\sigma_{\mathcal{J}_i}, z_{\mathcal{J}_i}),
+\qquad
+F\qty(\sigma_{\mathcal{J}_i}, z_{\mathcal{J}_i}) = \tr\qty[ \sqrt{ \sqrt{\sigma_{\mathcal{J}_i}}\, z_{\mathcal{J}_i} \sqrt{\sigma_{\mathcal{J}_i}} } ]^2,
+\end{equation}
+the fidelity between the target marginal $\sigma_{\mathcal{J}_i}$ and the predicted marginal $z_{\mathcal{J}_i}$. The mean fidelity $F_{\mathrm{mean}}$ is obtained by averaging $F_\beta$ over all samples in the test set, $F_{\mathrm{mean}} = \sum_{\beta=1}^{N_{\mathrm{test}}} F_\beta / N_{\mathrm{test}}$, where $N_{\mathrm{test}}$ is the number of samples. To show variability in the data, we use the standard deviation (SD), calculated as
+\begin{equation}
+\mathrm{SD} = \sqrt{ \frac{1}{N_{\mathrm{test}}-1} \sum_{\beta=1}^{N_{\mathrm{test}}} \qty(F_{\mathrm{mean}} - F_\beta)^2 }.
+\end{equation}
+
+We consider $N$-qubit global states with $k$-qubit marginals, denoted as $NXkY$ (e.g.\ $N3k2$ corresponds to 3-qubit global states with 2-qubit marginals). We label the model that uses the full loss function of Eq.~\eqref{eq:qmp-loss} as \textit{model1}, while \textit{model2} uses Eq.~\eqref{eq:qmp-loss} without the marginals term $\sum_i \epsilon(\sigma_{\mathcal{J}_i}, z_{\mathcal{J}_i})$. The scaling parameter $S$ of the architecture (see Section~\ref{sec:qmp-architecture}) is determined by experimentation, keeping the minimum value of $S$ that produces satisfactory levels of accuracy and success rate.
+
+To evaluate the performance of \textit{model1} and \textit{model2} in the case $N3k2$, we set the scaling factor $S = 10$ and trained both models for 100 epochs using the same dataset of size $10^6$ (see Section~\ref{sec:qmp-data}), with weights initialized from the same seed. We then evaluated the performance of these trained models in both the $N3k1$ and $N3k2$ cases. The values of $F_{\mathrm{mean}} \pm \mathrm{SD}$, calculated over $10^4$ samples per rank, are shown in Fig.~\ref{fig:qmp-n3}, for ranks up to $2^N$. As expected, predictions from \textit{model1} consistently achieve higher fidelity with target marginals compared to \textit{model2} for all ranks, and both models achieve a high success rate. This demonstrates the importance of including the marginals term in the loss function. Moreover, predictions from \textit{model1} outperform random guessing, which involves generating random $N$-qubit density matrices, calculating their $k$-qubit marginals, and computing the fidelity with the target marginals.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{images/stdN3k1.png}
+    \caption{$N3k1$}
+    \label{fig:qmp-n3k1}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{images/stdN3k2.png}
+    \caption{$N3k2$}
+    \label{fig:qmp-n3k2}
+  \end{subfigure}
+  \caption[Mean fidelity versus rank for the $N3k1$ and $N3k2$ cases]{Mean and standard deviation (colored cloud) of the fidelity, obtained over $10^4$ samples, versus rank for \textit{model1} (purple squares), \textit{model2} (green dots), and random guessing (red triangles) for the cases (a) $N3k1$ and (b) $N3k2$.}
+  \label{fig:qmp-n3}
+\end{figure}
+
+In Fig.~\ref{fig:qmp-larger}, we compare \textit{model1} to random guessing on systems with $N > 3$, up to $N = 8$ qubits, using the mean fidelity $F_{\mathrm{mean}}$ as a performance metric. The comparison is carried out for different values of $k$. We observe that \textit{model1} consistently outperforms random guessing in all scenarios, with the performance gap increasing as $k$ grows. This suggests that the model retains the information provided by the marginals with high accuracy. Furthermore, \textit{model1} achieved high success rates for all cases shown in Fig.~\ref{fig:qmp-larger}: above 95\% for the case $N4k2$, and above 99\% for the remaining cases --- some of which reached 100\% --- as detailed in Fig.~\ref{fig:qmp-success-model1}.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.99\textwidth]{images/all_cases_extra_mio_no.png}
+  \caption[Mean fidelity versus rank for systems of 4 to 8 qubits]{$F_{\mathrm{mean}} \pm \mathrm{SD}$, over $10^4$ samples, as a function of rank for \textit{model1} (purple dashed line) and for random guessing (solid red line) for the cases $N4k2$, $N4k3$, $N5k3$, $N5k4$, $N6k4$, $N6k5$, $N7k5$, $N7k6$, $N8k6$, and $N8k7$.}
+  \label{fig:qmp-larger}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/success_rate_no.png}
+  \caption[Success rates of \textit{model1}]{Success rates of \textit{model1} for all the cases presented in Fig.~\ref{fig:qmp-larger}. \textit{model1} achieved a 100\% success rate for all the cases with $N > 5$, with the lines overlapping at the 100\% mark.}
+  \label{fig:qmp-success-model1}
+\end{figure}
+
+\subsection{The hybrid \textit{model1}+MIO scheme}
+\label{sec:qmp-hybrid}
+
+Moreover, we tested a scheme in which the output of \textit{model1} is passed through the MIO (\textit{model1}+MIO). By first applying the MIO and then feeding its output into the CDAE, we obtain a global state that closely reproduces the target marginals with high fidelity. This resulting state can then serve as a new seed for a subsequent pass through the MIO, as given by Eq.~\eqref{eq:qmp-corrupted}, using the given target marginals $\{\sigma_{\mathcal{J}_\alpha}\}_{\alpha=1}^{M}$. Depending on the number $k$ of qubits in the quantum marginals, some corrupted (i.e.\ negative) eigenvalues may still persist. However, we observed that, in many cases, the final output contains no corrupted eigenvalues, or at least fewer than those present after the initial MIO pass; see Fig.~\ref{fig:qmp-negative-eigs} for details. Additionally, the magnitude of these corrupted eigenvalues tends to decrease by approximately one order of magnitude.
+
+In Fig.~\ref{fig:qmp-hybrid-fidelity}, we show results for cases in which the final output of this scheme (\textit{model1}+MIO) is a valid quantum state whose marginals match the target marginals with perfect fidelity. Success rates of these cases are shown in Fig.~\ref{fig:qmp-success-hybrid}. For systems with $N > 5$, all the instances were perfectly reconstructed, achieving a success rate of 100\%, whereas for the cases $N4k2$ and $N5k2$ the success rate consistently increases with the rank. These results suggest that further improvements to the model, such as adding more layers, increasing filter sizes, or training on larger datasets, could potentially lead the model to find exact solutions in all the cases.
+
+We experimented with iterating the CDAE and MIO steps multiple times in cases where exact solutions were not initially found, but observed no significant improvement beyond the \textit{model1}+MIO scheme. This suggests that a single iteration is sufficient to achieve this form of ``purification''. We hypothesize that this is because the remaining negative eigenvalues after the second MIO pass are too small to be identified by the CDAE as noise in subsequent iterations.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.99\textwidth]{images/proportion_of_NE_yes.png}
+  \caption[Proportion of negative eigenvalues before and after the CDAE]{Comparison of the proportion of negative eigenvalues relative to the total number of eigenvalues. Each bar represents the average over a sample of $10^4$ tests per rank, with error bars indicating the standard deviation. Light blue bars correspond to the first pass through the MIO, while pink bars correspond to the \textit{model1}+MIO configuration.}
+  \label{fig:qmp-negative-eigs}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.99\textwidth]{images/all_cases_extra_mio_yes.png}
+  \caption[Mean fidelity of the \textit{model1}+MIO scheme]{$F_{\mathrm{mean}} \pm \mathrm{SD}$, over $10^4$ samples, as a function of rank for \textit{model1} with an additional MIO pass (purple dashed line) and for random guessing (solid red line). Results are shown for the cases $N4k2$, $N5k2$, $N6k2$, $N6k3$, $N7k3$, $N7k4$, $N8k3$, and $N8k4$. All the states produced by the \textit{model1}+MIO scheme match the target marginals with perfect fidelity.}
+  \label{fig:qmp-hybrid-fidelity}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/success_rate_yes.png}
+  \caption[Success rates of the \textit{model1}+MIO scheme]{Success rates of the \textit{model1}+MIO scheme for all the cases presented in Fig.~\ref{fig:qmp-hybrid-fidelity}. The scheme achieved a 100\% success rate for all the cases with $N > 5$, with the lines overlapping at the 100\% mark.}
+  \label{fig:qmp-success-hybrid}
+\end{figure}
+
+\subsection{Computational time benchmark}
+\label{sec:qmp-benchmark}
+
+In addition, we compare the performance of our model against state-of-the-art SDP solvers in terms of computation time. Figure~\ref{fig:qmp-runtime} shows the average runtime computed over $10^3$ samples for cases with $N < 6$, 100 samples for the case with $N = 6$, and 50 samples for cases with $N > 6$. In all cases, the target marginals were obtained from full-rank density matrices. As shown in Fig.~\ref{fig:qmp-runtime}, once trained, both \textit{model1} and \textit{model1}+MIO execute faster than the SDP solver provided by the CVXPY library in \texttt{Python}. While the SDP solver consistently found solutions matching the target marginals with perfect fidelity, it failed to run for the $N8k4$ case on our machine. In contrast, the \textit{model1}+MIO scheme successfully found solutions with exact marginals for $N8k4$, with an average runtime of approximately 3.38\,s.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{images/runtime.png}
+  \caption[Average computation time: SDP solver vs.\ proposed schemes]{Average computation time of the CVXPY SDP solver (blue dashed line), \textit{model1} (green dotted line), and \textit{model1}+MIO (red solid line) across different system sizes. The vertical axis is in logarithmic scale. The SDP solver failed to run for the 8-qubit case.}
+  \label{fig:qmp-runtime}
+\end{figure}
+
+\FloatBarrier
+
+%-----------------------------------------------------------
+\section{Summary}
+\label{sec:qmp-discussion}
+
+We developed a CDAE and combined it with the MIO~\cite{uzcategui2022mio} to find a global $N$-qubit density matrix compatible with a given set of quantum marginals. The model, which admits any $N$-qubit global system with more than 2 qubits, transforms, in most cases, the output of the MIO into a PSD matrix, preserving information about the quantum marginals with high accuracy. Transfer learning proved valuable, allowing the size of the training dataset to be reduced by leveraging knowledge learned in smaller-scale cases to improve performance on larger ones. The hybrid \textit{model1}+MIO scheme reconstructed states whose marginals match the targets with perfect fidelity in many cases, and once trained, inference was significantly faster than state-of-the-art SDP solvers, even succeeding in regimes where the SDP solver failed to run.
+
+A known limitation is that the model may struggle when the quantum marginals correspond to pure global states, whose global representation is unique; for mixed states, multiple representations exist, increasing the likelihood of finding an acceptable solution. The broader implications of this work for large-scale quantum information, its connection to the dynamics-interpolation framework of Chapter~\ref{ch:results-pinn-unitaries}, and future directions, such as warm-starting SDP solvers, anomaly detection of incompatible marginals, and explainability of the learned representations, are discussed in the general conclusions of Chapter~\ref{sec:conclusions}.
+
+%-----------------------------------------------------------
+\section{Model architecture}
+\label{sec:qmp-architecture}
+
+In this section, we describe the specifics of the proposed CDAE. The encoder consists of multiple layers, incorporating 2D convolution (Conv2D) operations, 2D max pooling (MaxPool2D) operations~\cite{dumoulin2018}, and hyperbolic tangent (Tanh) activation functions. The decoder includes Conv2D operations and Tanh activation functions, along with layers utilizing 2D transposed convolutions (TConv2D).
+
+Tables~\ref{tab:qmp-encoder} and~\ref{tab:qmp-decoder} provide detailed specifications of each layer in the encoder and decoder, respectively. All convolutional and transposed convolutional layers use a dilation factor of one. In the decoder, the output padding for transposed convolutions is fixed at zero. The intermediate number of channels in both encoder and decoder is controlled by a scaling factor $S$, which allows for flexible adjustment of the model's capacity. Lower values of $S$ reduce the number of trainable parameters, offering a trade-off between model complexity and computational efficiency.
+
+\begin{table}[htbp]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{c|c|c|c|c|c|c}
+\hline
+\textbf{Layer} & \textbf{Operation} & \textbf{Input ch.} & \textbf{Output ch.} & \textbf{Kernel} & \textbf{Stride} & \textbf{Padding} \\
+\hline \hline
+(0) & Conv2D & 2 & $S \times 10$ & $3 \times 3$ & 1 & 1 \\
+(1) & Tanh & --- & --- & --- & --- & --- \\
+(2) & MaxPool2D & --- & --- & $2 \times 2$ & 2 & 0 \\
+(3) & Conv2D & $S \times 10$ & $S \times 10$ & $3 \times 3$ & 1 & 1 \\
+(4) & Tanh & --- & --- & --- & --- & --- \\
+(5) & MaxPool2D & --- & --- & $2 \times 2$ & 2 & 0 \\
+(6) & Conv2D & $S \times 10$ & $S \times 10$ & $3 \times 3$ & 1 & 1 \\
+(7) & Tanh & --- & --- & --- & --- & --- \\
+(8) & MaxPool2D & --- & --- & $2 \times 2$ & 2 & 0 \\
+\hline
+\end{tabular}
+\caption[Specifications of the CDAE encoder layers]{Specifications for each encoder layer. Dilation is fixed to one throughout the network.}
+\label{tab:qmp-encoder}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{c|c|c|c|c|c|c}
+\hline
+\textbf{Layer} & \textbf{Operation} & \textbf{Input ch.} & \textbf{Output ch.} & \textbf{Kernel} & \textbf{Stride} & \textbf{Padding} \\
+\hline \hline
+(0) & TConv2D & $S \times 10$ & $S \times 10$ & $3 \times 3$ & 2 & 1 \\
+(1) & Tanh & --- & --- & --- & --- & --- \\
+(2) & TConv2D & $S \times 10$ & $S \times 10$ & $5 \times 5$ & 2 & 1 \\
+(3) & Tanh & --- & --- & --- & --- & --- \\
+(4) & TConv2D & $S \times 10$ & $S \times 10$ & $6 \times 6$ & 2 & 0 \\
+(5) & Tanh & --- & --- & --- & --- & --- \\
+(6) & Conv2D & $S \times 10$ & 2 & $3 \times 3$ & 1 & 0 \\
+\hline
+\end{tabular}
+\caption[Specifications of the CDAE decoder layers]{Specifications for each decoder layer. Dilation is set to one, and output padding in transposed convolutions (TConv2D) is fixed at zero.}
+\label{tab:qmp-decoder}
+\end{table}
+
+\FloatBarrier
+
+\subsection{Compatibility of the CDAE with arbitrary system sizes}
+\label{sec:qmp-channel-sizes}
+
+This subsection provides a detailed analysis of the channel sizes in the CDAE presented in Section~\ref{sec:qmp-approach}. Each input to the CDAE is a two-channel tensor, where each channel is a $2^N \times 2^N$ matrix. We demonstrate that for $N > 2$, the channel size of the CDAE's output remains consistent at $2^N \times 2^N$. The size of a channel can change when Conv2D, MaxPool2D, and TConv2D operations are applied to tensors at different layers of the CDAE. The model considers a setting with square channels, square kernels, the same stride along both axes, and the same padding along both axes. Under these conditions, the channel size for Conv2D and MaxPool2D operations can be calculated using the following formula~\cite{dumoulin2018}:
+\begin{equation}
+\label{eq:qmp-conv-size}
+C^{E/D}_{\mathrm{out}(j)} = \left\lfloor \frac{C^{E/D}_{\mathrm{in}(j)} + 2P - D(K-1) - 1}{S} + 1 \right\rfloor,
+\end{equation}
+with $\lfloor \ldots \rfloor$ the floor function. Here, $C^{E/D}_{\mathrm{in}(j)}$ and $C^{E/D}_{\mathrm{out}(j)}$ are the input and output size, respectively, of a channel at layer $(j)$ of the encoder ($E$) or decoder ($D$); $P$ is the padding, $D$ the dilation, $K$ the kernel size, and $S$ the stride. The dilation is set to $D = 1$ across the entire CDAE.
+
+Note that $C^{E/D}_{\mathrm{in}(l)} = C^{E/D}_{\mathrm{out}(l-1)}$ for $l > 0$; that is, the input size of layer $(l)$ is equal to the output size of the previous layer $(l-1)$. The input size of the encoder is $C^{E}_{\mathrm{in}(0)} = 2^N$. Using the values for $P$, $D$, $K$, and $S$ given in Table~\ref{tab:qmp-encoder}, the convolutional layers (0), (3), and (6) leave the channel size unchanged, since
+\begin{equation}
+C^{E}_{\mathrm{out}(0)} = \left\lfloor \frac{C^{E}_{\mathrm{in}(0)} + 2 \times 1 - 1 \times (3-1) - 1}{1} + 1 \right\rfloor = \left\lfloor C^{E}_{\mathrm{in}(0)} \right\rfloor = 2^N,
+\end{equation}
+and the Tanh operations do not affect the channel size. Each MaxPool2D layer --- layers (2), (5), and (8) --- halves the channel size,
+\begin{equation}
+C^{E}_{\mathrm{out}(2)} = \left\lfloor \frac{C^{E}_{\mathrm{out}(1)} + 2 \times 0 - 1 \times (2-1) - 1}{2} + 1 \right\rfloor = \left\lfloor 2^{-1} C^{E}_{\mathrm{out}(1)} \right\rfloor = 2^{N-1},
+\end{equation}
+so that, applying the three convolution--pooling blocks in sequence, the output size of the encoder is
+\begin{equation}
+C^{E}_{\mathrm{out}(8)} = 2^{N-3}.
+\end{equation}
+Note that for $N < 3$ the encoder would render an invalid size, which establishes the requirement $N > 2$.
+
+We now compute the channel sizes through the decoder using the values given in Table~\ref{tab:qmp-decoder}. For TConv2D operations, the channel size $D_{\mathrm{out}(j)}$ changes according to~\cite{dumoulin2018}
+\begin{equation}
+\label{eq:qmp-tconv-size}
+D_{\mathrm{out}(j)} = \qty( D_{\mathrm{in}(j)} - 1 ) S - 2P + D(K-1) + P_{\mathrm{out}} + 1,
+\end{equation}
+where $P_{\mathrm{out}}$ is the output padding, which is set to zero across the entire CDAE. As for the encoder, $D_{\mathrm{in}(l)} = D_{\mathrm{out}(l-1)}$ for $l > 0$, and the input size of the first decoder layer is $C^{E}_{\mathrm{out}(8)} = 2^{N-3}$. Applying Eq.~\eqref{eq:qmp-tconv-size} successively with the parameters of Table~\ref{tab:qmp-decoder} yields
+\begin{align}
+D_{\mathrm{out}(0)} &= \qty(2^{N-3} - 1) \times 2 - 2 + (3-1) + 1 = 2^{N-2} - 1, \\
+D_{\mathrm{out}(2)} &= \qty(2^{N-2} - 1 - 1) \times 2 - 2 + (5-1) + 1 = 2^{N-1} - 1, \\
+D_{\mathrm{out}(4)} &= \qty(2^{N-1} - 1 - 1) \times 2 - 0 + (6-1) + 1 = 2^{N} + 2,
+\end{align}
+where the Tanh layers in between leave the size unchanged. Finally, the output size at layer (6) follows from Eq.~\eqref{eq:qmp-conv-size}:
+\begin{equation}
+C^{D}_{\mathrm{out}(6)} = \left\lfloor \frac{D_{\mathrm{out}(5)} + 2 \times 0 - (3-1) - 1}{1} + 1 \right\rfloor
+= \left\lfloor D_{\mathrm{out}(5)} - 2 \right\rfloor = 2^N + 2 - 2 = 2^N,
+\end{equation}
+where $D_{\mathrm{out}(5)} = D_{\mathrm{out}(4)}$. Thus, we have shown that the CDAE input and output sizes are equal for any $N > 2$, confirming that the same architecture supports arbitrary $N$-qubit systems beyond two qubits.

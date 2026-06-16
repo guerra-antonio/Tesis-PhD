@@ -1,21 +1,15 @@
-\documentclass[tikz,border=10pt]{standalone}
+\documentclass[tikz,border=12pt]{standalone}
 \usepackage{amsmath}
 \usepackage[T1]{fontenc}
 \usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta,backgrounds,fit,calc,matrix}
-
-% =====================================================================
-%  Convolución 2D  (2D convolution illustration)
-%  Standalone, compilable. To embed in the thesis copy the
-%  \begin{tikzpicture}...\end{tikzpicture} block into a figure and
-%  load in the preamble:
-%     \usetikzlibrary{positioning,arrows.meta,backgrounds,fit,calc,matrix}
-% =====================================================================
+\usetikzlibrary{positioning,arrows.meta,backgrounds,fit,calc}
 
 \definecolor{cblue}{RGB}{31,90,150}
 \definecolor{cbluefill}{RGB}{225,236,247}
 \definecolor{cgreen}{RGB}{40,120,55}
-\definecolor{cgreenfill}{RGB}{231,243,228}
+\definecolor{cgreenfill}{RGB}{222,240,220}
+\definecolor{cgreenside}{RGB}{30,95,42}
+\definecolor{cgreentop}{RGB}{60,150,72}
 \definecolor{cpurple}{RGB}{95,50,135}
 \definecolor{cpurplefill}{RGB}{240,235,247}
 \definecolor{cnavy}{RGB}{20,45,90}
@@ -23,88 +17,62 @@
 \begin{document}
 \begin{tikzpicture}[
   font=\small,
-  cell/.style={minimum size=10mm, draw=cblue!55, line width=0.4pt, anchor=center},
-  >={Stealth[length=2.2mm]}
+  >={Stealth[length=2.6mm,width=2.0mm]},
+  xcell/.style={minimum size=10mm, draw=cblue!55, line width=0.4pt, fill=cbluefill, anchor=center},
+  kcell/.style={minimum size=10mm, draw=cgreen!75, line width=0.5pt, fill=cgreenfill, anchor=center},
+  ycell/.style={minimum size=10mm, draw=cpurple!60, line width=0.5pt, fill=cpurplefill, anchor=center},
 ]
 
-% TITLE
-\node[cnavy] at (7.0,4.6) {\bfseries\LARGE Convolución 2D};
-\draw[cblue, line width=1pt] (3.0,4.0)--(11.0,4.0);
-\fill[cblue] (3.0,4.0) circle (1.6pt); \fill[cblue] (7.0,4.0) circle (1.6pt); \fill[cblue] (11.0,4.0) circle (1.6pt);
+\def\dx{0.32}\def\dy{0.42}
 
-% INPUT 5x5
-\node[cnavy] at (2.0,3.4) {\bfseries Entrada ($X$)};
-\node[cnavy] at (2.0,3.0) {$5\times5$};
-\begin{scope}[on background layer]
-  \fill[cbluefill] (0.5,2.0) rectangle (3.5,-1.0);
-\end{scope}
+% ============ INPUT 5x5 (patch visible) ============
+% highlight the receptive field first (behind cells)
+\fill[cgreen!22] (0.5,5.5) rectangle (3.5,2.5);
 \foreach \r in {1,...,5}{
   \foreach \c in {1,...,5}{
-    \pgfmathtruncatemacro{\rr}{\r}
-    \pgfmathtruncatemacro{\cc}{\c}
-    \node[cell] (X\r\c) at ({\c*1.0},{2.5-\r*1.0}) {\scriptsize$x_{\rr\cc}$};
+    \node[xcell] (X\r\c) at (\c,{6-\r}) {\scriptsize$x_{\r\c}$};
   }
 }
-\draw[cblue, line width=1.2pt] (0.5,2.0) rectangle (3.5,-1.0);
+\draw[cblue, line width=1.1pt] (0.5,5.5) rectangle (5.5,0.5);
+\draw[cgreen, line width=1.4pt] (0.5,5.5) rectangle (3.5,2.5); % patch border
+\node[cnavy, font=\bfseries, anchor=north] at (3.0,0.15) {Input ($X$), $5\times5$};
 
-% KERNEL 3x3
-\node[cgreen] at (7.0,3.4) {\bfseries Filtro / Kernel ($K$)};
-\node[cgreen] at (7.0,3.0) {$3\times3$};
+% ============ SEPARATE (FLAT) KERNEL (floating above the patch) ============
+\coordinate (KbL) at (1.5,7.0);
+\coordinate (KtR) at (4.5,10.0);
+% front face = kernel grid
 \foreach \r in {1,...,3}{
   \foreach \c in {1,...,3}{
-    \pgfmathtruncatemacro{\rr}{\r}
-    \pgfmathtruncatemacro{\cc}{\c}
-    \node[cell, draw=cgreen!60, fill=cgreenfill] (K\r\c) at ({5.5+\c*1.0},{2.5-\r*1.0}) {\scriptsize$k_{\rr\cc}$};
+    \node[kcell] (K\r\c) at ({1.0+\c},{10.5-\r}) {\scriptsize$k_{\r\c}$};
   }
 }
+\draw[cgreen, line width=1.1pt] (KbL) rectangle (KtR);
+\node[cgreen, font=\bfseries] at (3,10.65) {Kernel ($K$), $3\times3$};
 
-\node[cnavy] at (5.85,0.5) {\large $\odot$};
-\node[cnavy] at (9.9,0.5) {\large $=$};
+% ============ FRUSTUM: patch corners -> kernel corners ============
+\foreach \pp/\kk in {{0.5,5.5}/{1.5,10.0}, {3.5,5.5}/{4.5,10.0},
+                     {3.5,2.5}/{4.5,7.0}, {0.5,2.5}/{1.5,7.0}}{
+  \draw[cgreen!75, dashed, line width=0.6pt] (\pp) -- (\kk);
+}
 
-\draw[cblue, dashed, line width=0.4pt] (3.5,2.0)--(6.5,2.0);
-\draw[cblue, dashed, line width=0.4pt] (3.5,-1.0)--(6.5,-1.0);
+% ============ big operation arrow (centered on midline y=3) ============
+\draw[cnavy, ->, line width=1.3pt] (6.0,3.0) -- (8.4,3.0);
+\node[cnavy, align=center, font=\scriptsize] at (7.2,3.5) {convolution};
 
-% OUTPUT 3x3
-\node[cpurple] at (12.7,3.4) {\bfseries Mapa de características ($Y$)};
-\node[cpurple] at (12.7,3.0) {$3\times3$};
+% ============ OUTPUT 3x3 (smaller, centered on y=3) ============
+\fill[cpurple!22] (9.0,4.5) rectangle (10.0,3.5);
 \foreach \r in {1,...,3}{
   \foreach \c in {1,...,3}{
-    \pgfmathtruncatemacro{\rr}{\r}
-    \pgfmathtruncatemacro{\cc}{\c}
-    \node[cell, draw=cpurple!55, fill=cpurplefill] (Y\r\c) at ({10.7+\c*1.0},{2.0-\r*1.0}) {\scriptsize$y_{\rr\cc}$};
+    \pgfmathtruncatemacro{\isone}{(\r==1)&&(\c==1) ? 1 : 0}
+    \ifnum\isone=1
+      \node[ycell, fill=none, draw=cpurple, line width=1.4pt] (Y\r\c) at ({8.5+\c},{5-\r}) {\scriptsize$y_{\r\c}$};
+    \else
+      \node[ycell] (Y\r\c) at ({8.5+\c},{5-\r}) {\scriptsize$y_{\r\c}$};
+    \fi
   }
 }
-\draw[cpurple, line width=1.3pt] (Y11.south west) rectangle (Y11.north east);
-
-% ELEMENTWISE PRODUCT GRID
-\foreach \r in {1,...,3}{
-  \foreach \c in {1,...,3}{
-    \pgfmathtruncatemacro{\rr}{\r}
-    \pgfmathtruncatemacro{\cc}{\c}
-    \node[draw=black!35, line width=0.3pt, minimum width=14mm, minimum height=6mm]
-      (P\r\c) at ({5.45+\c*1.45},{-2.6-\r*0.62}) {\tiny$x_{\rr\cc}\!\cdot\! k_{\rr\cc}$};
-  }
-}
-\draw[cgreen,->,line width=0.7pt] (7.0,-1.7)--(7.0,-2.6);
-
-% SUM BOX
-\node[draw=cpurple!50, fill=cpurplefill, rounded corners, inner sep=4mm, line width=0.6pt]
-  (sum) at (7.0,-6.4) {$\displaystyle \sum_{i=1}^{3}\sum_{j=1}^{3} x_{ij}\,k_{ij} + b$};
-\draw[cgreen,->,line width=0.7pt] (7.0,-5.0)--(sum.north);
-
-% DASHED FLOW
-\draw[cpurple, dashed, ->, line width=0.6pt] (Y31.south) |- (sum.east);
-\draw[cpurple, dashed, ->, line width=0.6pt] (Y21.north) -- (Y11.south);
-
-% LEGEND
-\node[draw=black!25, rounded corners, line width=0.5pt,
-      minimum width=15.4cm, minimum height=1.7cm] at (7.0,-8.9) {};
-\node[cell, draw=cblue, fill=cbluefill, minimum size=7mm] (l1) at (0.7,-8.9) {};
-\node[right=1.5mm of l1, align=left, font=\scriptsize] {Ventana deslizante\\(región local de la entrada)};
-\draw[cblue,->, line width=0.8pt] (5.55,-8.9)--(6.25,-8.9);
-\node[anchor=west, align=left, font=\scriptsize] at (6.35,-8.9) {Se desliza por toda la entrada\\(\textit{stride} $s=1$ en este ejemplo)};
-\node[cell, draw=cpurple, fill=cpurplefill, minimum size=7mm] (l3) at (10.6,-8.9) {};
-\node[right=1.5mm of l3, align=left, font=\scriptsize] {Cada posición genera un valor\\en el mapa de características};
+\draw[cpurple, line width=1.1pt] (9.0,4.5) rectangle (12.0,1.5);
+\node[cnavy, font=\bfseries, align=center] at (10.5,5.35) {Feature map ($Y$), $3\times3$};
 
 \end{tikzpicture}
 \end{document}

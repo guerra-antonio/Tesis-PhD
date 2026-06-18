@@ -533,26 +533,28 @@ This representation provides a unified and scalable framework for describing the
 \paragraph{Fidelity between density matrices.}
 To quantitatively assess the similarity between quantum states and quantum operations, it is necessary to introduce appropriate fidelity measures. These quantities play a central role in the validation of quantum dynamics, the characterization of control protocols, and the evaluation of machine-learning-based models for quantum systems.
 
-The fidelity between two quantum states $\rho$ and $\sigma$ is defined as \cite{NielsenChuang2010}
+The fidelity between two quantum states $\rho$ and $\sigma$ is defined as \cite{Jozsa1994}
 \begin{equation}
     \label{eq:fidelity}
     F(\rho,\sigma)
     =
+    \qty[
     \Tr\!\qty(
     \sqrt{\sqrt{\rho}\,\sigma\,\sqrt{\rho}}
-    ).
+    )
+    ]^2.
 \end{equation}
 This definition admits simplified expressions in relevant special cases. If one of the states is pure, $\rho = \ket{\psi}\bra{\psi}$, the fidelity reduces to
 \begin{equation}
     F(\ket{\psi},\sigma)
     =
-    \sqrt{\bra{\psi}\sigma\ket{\psi}},
+    \bra{\psi}\sigma\ket{\psi},
 \end{equation}
 while for two pure states, $\rho = \ket{\psi}\bra{\psi}$ and $\sigma = \ket{\phi}\bra{\phi}$, it further reduces to
 \begin{equation}
     F(\ket{\psi},\ket{\phi})
     =
-    \qty|\braket{\psi}{\phi}|.
+    \qty|\braket{\psi}{\phi}|^2.
 \end{equation}
 
 For any pair of density operators $\rho$ and $\sigma$, the fidelity satisfies the following properties:
@@ -610,7 +612,7 @@ Since the Choi--Jamiołkowski isomorphism maps quantum operations to density mat
     J_V & = (\mathcal{V} \otimes \id)\qty(\ket{\Phi}\bra{\Phi}).
 \end{align}
 
-Unitary channels correspond to pure Choi states, which can be written as $J_U = \ket{J_U}\bra{J_U}$ and $J_V = \ket{J_V}\bra{J_V}$. For the comparison of unitary channels we adopt the \emph{gate fidelity}, defined as the squared overlap of their Choi states---equivalently, the square of the state fidelity of Eq.~\eqref{eq:fidelity} evaluated on these pure states,
+Unitary channels correspond to pure Choi states, which can be written as $J_U = \ket{J_U}\bra{J_U}$ and $J_V = \ket{J_V}\bra{J_V}$. For the comparison of unitary channels we adopt the \emph{gate fidelity}, defined simply as the fidelity of Eq.~\eqref{eq:fidelity} evaluated on these pure Choi states,
 \begin{equation}
     F(J_U, J_V) = \qty| \braket{J_U}{J_V} |^2 .
 \end{equation}

@@ -1,7 +1,7 @@
 \chapter{Interpolation of Unitaries with Time-Dependent Hamiltonians via Deep Learning}
 \label{ch:results-pinn-unitaries}
 
-This chapter presents the first main application developed in this thesis: a physics-informed deep learning framework for estimating the unitary time-evolution operator of quantum systems governed by time-dependent Hamiltonians over a full time domain. The results reported here correspond to the work submitted for publication in \textit{Machine Learning: Science and Technology}~\cite{guerra2026interpolation}. % <- add your own preprint/paper entry to references.bib
+This chapter presents the first main application developed in this thesis: a physics-informed deep learning framework for estimating the unitary time-evolution operator of quantum systems governed by time-dependent Hamiltonians over a full time domain. The results reported here correspond to the work submitted for publication in \textit{Machine Learning: Science and Technology}~\cite{guerra2026interpolation}.
 
 The theoretical background required for this chapter was developed in Chapter~\ref{sec:quantum_information}: the von Neumann equation~\eqref{eq:von_neumann} and its formal solution in terms of the time-ordered exponential~\eqref{eq:time_ordered_exponential}, the Magnus expansion~\eqref{eq:magnus}, the Trotter product formula~\eqref{eq:trotter}, the Pauli-basis representation of $N$-qubit operators (Section~\ref{sec:pauli_basis}), and the gate fidelity~\eqref{eq:gate_fidelity} between unitary channels obtained through the Choi--Jamio\l{}kowski isomorphism~\eqref{eq:choi}. The deep learning machinery --- fully connected architectures~\eqref{eq:fully-connected-network}, loss functions (Section~\ref{sec:loss_functions}), gradient-based optimization (Section~\ref{sec:optimization}), and the physics-informed paradigm (Section~\ref{sec:pinns}) --- was introduced in Chapter~\ref{sec:deep_learning}. In accordance with Chapter~\ref{sec:quantum_information}, natural units with $\hbar = 1$ are used throughout this chapter.
 
@@ -365,8 +365,8 @@ where $\theta_{\mathrm{opt}}$ are the optimal weights of the neural network foun
 
 For evaluation, each trained model generates unitary matrices at the same 100 time points. These predicted matrices are then compared one-by-one with the target unitaries, yielding a fidelity function $F(t)$. Since multiple models for each system size are trained with different values of $\Delta t$, four fidelity curves $F(t)$ are obtained for each system size.
 
-% \subsection{Gate fidelity across system sizes}
-% \label{sec:res-fidelity}
+\subsection{Gate fidelity across system sizes}
+\label{sec:res-fidelity}
 
 The loss function additionally enforces unitarity across the time domain, ensuring that the model's predictions remain close to unitary transformations throughout training. To further minimize numerical deviations, we can compute the closest unitary matrix to each predicted output via Singular Value Decomposition (SVD), redefining the estimated unitary as
 \begin{equation}

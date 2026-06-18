@@ -160,13 +160,13 @@ These findings suggest a remarkable property of the network: the encoder appears
 
 In this section, we present the results of our experiments to evaluate the performance of the proposed CDAE in solving the task of finding a quantum state compatible with a given set of quantum marginals. We focus on two key metrics: the success rate and the accuracy. The success rate measures the fraction of outputs predicted by the model that are valid PSD matrices.
 
-To assess the accuracy of the predicted quantum marginals, we use the mean fidelity, denoted $F_{\mathrm{mean}}$, built upon the squared state fidelity, i.e.\ the square of the state fidelity introduced in Section~\ref{sec:fidelity}. For each sample $\beta$ in the test set, we compute the average fidelity $F_\beta$ over all the marginals in that sample as
+To assess the accuracy of the predicted quantum marginals, we use the mean fidelity, denoted $F_{\mathrm{mean}}$, built upon the state fidelity introduced in Section~\ref{sec:fidelity}. For each sample $\beta$ in the test set, we compute the average fidelity $F_\beta$ over all the marginals in that sample as
 \begin{equation}
 F_\beta = \frac{1}{\abs{\mathcal{M}_\beta}} \sum_{i=1}^{\abs{\mathcal{M}_\beta}} F\qty(\sigma_{\mathcal{J}_i}, z_{\mathcal{J}_i}),
 \qquad
 F\qty(\sigma_{\mathcal{J}_i}, z_{\mathcal{J}_i}) = \tr\qty[ \sqrt{ \sqrt{\sigma_{\mathcal{J}_i}}\, z_{\mathcal{J}_i} \sqrt{\sigma_{\mathcal{J}_i}} } ]^2,
 \end{equation}
-the fidelity between the target marginal $\sigma_{\mathcal{J}_i}$ and the predicted marginal $z_{\mathcal{J}_i}$. Here $F$ denotes the squared state fidelity, i.e.\ the square of Eq.~\eqref{eq:fidelity}, so that $F \in [0,1]$ and $F = 1$ if and only if the two marginals coincide; this is the same squared convention adopted for the gate fidelity in Chapter~\ref{sec:quantum_information}. The mean fidelity $F_{\mathrm{mean}}$ is obtained by averaging $F_\beta$ over all samples in the test set, $F_{\mathrm{mean}} = \sum_{\beta=1}^{N_{\mathrm{test}}} F_\beta / N_{\mathrm{test}}$, where $N_{\mathrm{test}}$ is the number of samples. To show variability in the data, we use the standard deviation (SD), calculated as
+the fidelity between the target marginal $\sigma_{\mathcal{J}_i}$ and the predicted marginal $z_{\mathcal{J}_i}$, as given directly by Eq.~\eqref{eq:fidelity}, so that $F \in [0,1]$ and $F = 1$ if and only if the two marginals coincide --- the same convention adopted for the gate fidelity in Chapter~\ref{sec:quantum_information}. The mean fidelity $F_{\mathrm{mean}}$ is obtained by averaging $F_\beta$ over all samples in the test set, $F_{\mathrm{mean}} = \sum_{\beta=1}^{N_{\mathrm{test}}} F_\beta / N_{\mathrm{test}}$, where $N_{\mathrm{test}}$ is the number of samples. To show variability in the data, we use the standard deviation (SD), calculated as
 \begin{equation}
 \mathrm{SD} = \sqrt{ \frac{1}{N_{\mathrm{test}}-1} \sum_{\beta=1}^{N_{\mathrm{test}}} \qty(F_{\mathrm{mean}} - F_\beta)^2 }.
 \end{equation}

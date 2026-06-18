@@ -181,7 +181,7 @@ The name originates from the matrix formulation of the convolution. A discrete c
 
 Both operators are built from the same kernel parameters; the transposed convolution is therefore \emph{not} the inverse of the convolution, since it does not recover the original input, but rather its adjoint in terms of connectivity. This is precisely the operation that arises when backpropagating gradients through a convolutional layer: the gradient of the output with respect to the input of a convolution is obtained through a transposed convolution, and conversely.
 
-In practice, a transposed convolution with stride $s$ can be implemented as an ordinary, unit-stride convolution applied to a modified input. Two zero-insertion operations are involved. First, the input is \emph{dilated} by inserting $s-1$ zeros between consecutive elements along each spatial dimension, which encodes the upsampling factor. Second, a zero-valued \emph{border} of width $k - p - 1$ is added around the dilated map, where $k$ is the kernel size and $p$ the padding of the corresponding direct convolution. A standard convolution with unit stride is then applied to the resulting array. Figure~\ref{fig:transconv-connected-network} shows this procedure for a $3\times3$ input and a $3\times3$ kernel: the inserted and border zeros are made explicit, and the final stride-one convolution yields a $5\times5$ output. It is worth emphasizing that these zeros are not inert; during the convolution they merely deactivate selected terms of the weighted sum, so that different output positions combine different subsets of input values and kernel weights, producing a genuine upsampling rather than a trivial zero-filling.
+In practice, a transposed convolution with stride $s$ can be implemented as an ordinary, unit-stride convolution applied to a modified input. Two zero-insertion operations are involved. First, the input is \emph{dilated} by inserting $s-1$ zeros between consecutive elements along each spatial dimension, which encodes the upsampling factor. Second, a zero-valued \emph{border} of width $k - p - 1$ is added around the dilated map, where $k$ is the kernel size and $p$ the padding of the corresponding direct convolution. A standard convolution with unit stride is then applied to the resulting array. Figure~\ref{fig:transconv-connected-network} shows this procedure for a $3\times3$ input and a $3\times3$ kernel: the inserted and border zeros are made explicit, and the final stride-one convolution yields a $7\times7$ output. It is worth emphasizing that these zeros are not inert; during the convolution they merely deactivate selected terms of the weighted sum, so that different output positions combine different subsets of input values and kernel weights, producing a genuine upsampling rather than a trivial zero-filling.
 
 For a one-dimensional input of size $i$, kernel size $k$, stride $s$, and padding $p$, the spatial size of the transposed-convolution output is given by
 \begin{equation}
@@ -206,7 +206,7 @@ where $*^{\top}$ denotes the transposed-convolution operator, $\mathbf{K}^{(l)}$
     two-dimensional transposed convolution implemented as a direct convolution.
     The $3\times3$ input is dilated by inserting zeros (stride $2$), padded with a
     zero border, and convolved with a $3\times3$ kernel using unit stride,
-    yielding a $5\times5$ output.}
+    yielding a $7\times7$ output.}
     \label{fig:transconv-connected-network}
 \end{figure}
 
@@ -416,9 +416,9 @@ $\{x_j^{(0)}\}_{j=1}^{N_0}$ the points used to enforce the initial conditions, a
 $\{(x_k^{(b)},t_k^{(b)})\}_{k=1}^{N_b}$ the boundary points. 
 The discrete loss function minimized during training is given by
 
-\begin{equation}
+\begin{align}
 \mathcal{L}(\boldsymbol{\theta}) 
-=
+&=
 \frac{1}{N_f} 
 \sum_{i=1}^{N_f}
 \left|
@@ -432,9 +432,8 @@ The discrete loss function minimized during training is given by
 -
 \sin(\pi x_j^{(0)})
 \right|^2
-\end{equation}
-
-\begin{equation}
+\nonumber \\
+&\quad
 +
 \frac{1}{N_0}
 \sum_{j=1}^{N_0}
@@ -447,7 +446,7 @@ The discrete loss function minimized during training is given by
 \left|
 \mathcal{N}_{\boldsymbol{\theta}}(x_k^{(b)},t_k^{(b)})
 \right|^2.
-\end{equation}
+\end{align}
 
 Figure~\ref{fig:wave-pinn} illustrates the standard evaluation procedure, where the predicted solution surface $\mathcal{N}_{\boldsymbol{\theta}}(x,t)$ is compared with the analytical solution, together with a visualization of the absolute error over the full space--time domain. This combined analysis provides both a quantitative and qualitative assessment of the network's accuracy in capturing the wave dynamics.
 \begin{figure}

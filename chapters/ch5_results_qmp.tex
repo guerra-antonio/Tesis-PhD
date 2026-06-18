@@ -26,17 +26,17 @@ The architecture is capable of handling mixed quantum states for systems of 3 to
 A quantum marginal $\sigma_{\mathcal{J}}$ is the reduced quantum state of a subsystem labeled by $\mathcal{J}$, derived from a larger system with global state $\rho_{\mathcal{I}}$. Let $\mathcal{I}$ denote a set of labels (e.g.\ $\mathcal{I} = 1, \ldots, N$) representing the components of an $N$-body physical system. The subset $\mathcal{J} \subset \mathcal{I}$ corresponds to the components of a reduced subsystem. When the global state $\rho_{\mathcal{I}}$ is known, the marginal state $\sigma_{\mathcal{J}}$ can be obtained via the partial trace operation introduced in Section~\ref{sec:composite_systems} [cf.\ Eq.~\eqref{eq:partial_trace}] as
 \begin{equation}
 \label{eq:qmp-partial-trace}
-\sigma_{\mathcal{J}} = \tr_{\mathcal{J}^c} \qty[\rho_{\mathcal{I}}]
+\sigma_{\mathcal{J}} = \Tr_{\mathcal{J}^c} \qty[\rho_{\mathcal{I}}]
 = \sum_{j} \qty( \bra{j^c} \otimes \id_{\mathcal{J}} )\, \rho_{\mathcal{I}}\, \qty( \ket{j^c} \otimes \id_{\mathcal{J}} ),
 \end{equation}
 where $\mathcal{J} \cup \mathcal{J}^c = \mathcal{I}$. In Eq.~\eqref{eq:qmp-partial-trace}, the identity operator $\id_{\mathcal{J}}$ acts on the subsystem $\mathcal{J}$, while $\{\ket{j^c}\}$ is an orthonormal basis tracing the complement $\mathcal{J}^c$.
 
-Let us consider now the opposite problem. That is, given a set of $M$ quantum marginals $\{\sigma_{\mathcal{J}_\alpha}\}_{\alpha=1}^{M}$, we would like to know whether there is a global quantum state $\rho_{\mathcal{I}}$ such that $\sigma_{\mathcal{J}_\alpha} = \tr_{\mathcal{J}_\alpha^c}[\rho_{\mathcal{I}}]$ for all $\alpha = 1, \ldots, M$. This problem can be stated as the SDP~\cite{skrzypczyk2023sdp}
+Let us consider now the opposite problem. That is, given a set of $M$ quantum marginals $\{\sigma_{\mathcal{J}_\alpha}\}_{\alpha=1}^{M}$, we would like to know whether there is a global quantum state $\rho_{\mathcal{I}}$ such that $\sigma_{\mathcal{J}_\alpha} = \Tr_{\mathcal{J}_\alpha^c}[\rho_{\mathcal{I}}]$ for all $\alpha = 1, \ldots, M$. This problem can be stated as the SDP~\cite{skrzypczyk2023sdp}
 \begin{equation}
 \label{eq:qmp-sdp}
 \begin{aligned}
-\text{maximize} \quad & \tr(\rho_{\mathcal{I}}) \\
-\text{subject to} \quad & \tr_{\mathcal{J}_\alpha^c}[\rho_{\mathcal{I}}] = \sigma_{\mathcal{J}_\alpha}, \quad \alpha = 1, \ldots, M, \\
+\text{maximize} \quad & \Tr(\rho_{\mathcal{I}}) \\
+\text{subject to} \quad & \Tr_{\mathcal{J}_\alpha^c}[\rho_{\mathcal{I}}] = \sigma_{\mathcal{J}_\alpha}, \quad \alpha = 1, \ldots, M, \\
 & \rho_{\mathcal{I}} \succeq 0.
 \end{aligned}
 \end{equation}
@@ -53,18 +53,18 @@ The problem of determining a global quantum state from a given set of quantum ma
 - \rho_{\mathcal{J}} \otimes \frac{\id_{\mathcal{J}^c}}{\abs{\mathcal{J}^c}}
 + \sigma_{\mathcal{J}} \otimes \frac{\id_{\mathcal{J}^c}}{\abs{\mathcal{J}^c}},
 \end{equation}
-where $\tilde{\rho}_{\mathcal{I}}$ is an $|\mathcal{I}|$-party quantum state, which can be chosen at random or in any convenient fashion, and $\rho_{\mathcal{J}} = \tr_{\mathcal{J}^c}[\tilde{\rho}_{\mathcal{I}}]$.
+where $\tilde{\rho}_{\mathcal{I}}$ is an $|\mathcal{I}|$-party quantum state, which can be chosen at random or in any convenient fashion, and $\rho_{\mathcal{J}} = \Tr_{\mathcal{J}^c}[\tilde{\rho}_{\mathcal{I}}]$.
 
-It is easy to see that $\tr_{\mathcal{J}^c}[\mathcal{Q}_{\mathcal{J}}(\tilde{\rho}_{\mathcal{I}})] = \sigma_{\mathcal{J}}$. In simple terms, the MIO enforces the marginal $\sigma_{\mathcal{J}}$ onto $\tilde{\rho}_{\mathcal{I}}$, although $\mathcal{Q}_{\mathcal{J}}(\tilde{\rho}_{\mathcal{I}})$ may not necessarily represent a valid quantum state. Despite this, the MIO exhibits several interesting properties:
+It is easy to see that $\Tr_{\mathcal{J}^c}[\mathcal{Q}_{\mathcal{J}}(\tilde{\rho}_{\mathcal{I}})] = \sigma_{\mathcal{J}}$. In simple terms, the MIO enforces the marginal $\sigma_{\mathcal{J}}$ onto $\tilde{\rho}_{\mathcal{I}}$, although $\mathcal{Q}_{\mathcal{J}}(\tilde{\rho}_{\mathcal{I}})$ may not necessarily represent a valid quantum state. Despite this, the MIO exhibits several interesting properties:
 \begin{enumerate}[label=(\roman*)]
 \item Hermiticity: $\mathcal{Q}_{\mathcal{J}}(\tilde{\rho}_{\mathcal{I}}) = \mathcal{Q}_{\mathcal{J}}(\tilde{\rho}_{\mathcal{I}})^\dagger$;
-\item Trace preservation: $\tr[\mathcal{Q}_{\mathcal{J}}(\tilde{\rho}_{\mathcal{I}})] = 1$.
+\item Trace preservation: $\Tr[\mathcal{Q}_{\mathcal{J}}(\tilde{\rho}_{\mathcal{I}})] = 1$.
 \end{enumerate}
 
 More generally, for a given set $\{\sigma_{\mathcal{J}_\alpha}\}_{\alpha=1}^{M}$, the composition $\mathcal{Q}_{\mathcal{J}_M} \circ \cdots \circ \mathcal{Q}_{\mathcal{J}_1}(\tilde{\rho}_{\mathcal{I}})$ contains all the quantum marginals. That is,
 \begin{equation}
 \label{eq:qmp-mio-composition}
-\sigma_{\mathcal{J}_\alpha} = \tr_{\mathcal{J}_\alpha^c}\qty[ \mathcal{Q}_{\mathcal{J}_M} \circ \cdots \circ \mathcal{Q}_{\mathcal{J}_1}(\tilde{\rho}_{\mathcal{I}}) ],
+\sigma_{\mathcal{J}_\alpha} = \Tr_{\mathcal{J}_\alpha^c}\qty[ \mathcal{Q}_{\mathcal{J}_M} \circ \cdots \circ \mathcal{Q}_{\mathcal{J}_1}(\tilde{\rho}_{\mathcal{I}}) ],
 \end{equation}
 for all $\alpha = 1, \ldots, M$. An obvious condition for Eq.~\eqref{eq:qmp-mio-composition} to be satisfied is that for every pair $\sigma_{\mathcal{J}_\beta}, \sigma_{\mathcal{J}_\nu} \in \{\sigma_{\mathcal{J}_\alpha}\}_{\alpha=1}^{M}$, the quantum states $\sigma_{\mathcal{J}_\beta \cap \mathcal{J}_\nu}$ in the overlapping subsystems must coincide when $\mathcal{J}_\beta \cap \mathcal{J}_\nu \neq \emptyset$.
 
@@ -114,7 +114,7 @@ Let $\tilde{\vb{x}}$ and $\vb{z}$ be the input and output of the CDAE, respectiv
 \label{eq:qmp-corrupted}
 \tilde{X} = \mathcal{Q}_{\mathcal{J}_M} \circ \cdots \circ \mathcal{Q}_{\mathcal{J}_1}(\rho),
 \end{equation}
-obtained by composing Eq.~\eqref{eq:qmp-mio} for a given set $\{\sigma_{\mathcal{J}_\alpha}\}_{\alpha=1}^{M}$ of quantum marginals, with $\rho$ serving as an initial seed state. The term ``corrupted'' refers to the presence of negative eigenvalues in the matrix $\tilde{X}$, which indicates that it is not a valid quantum state, although it still contains the quantum marginals, that is, $\sigma_{\mathcal{J}_\alpha} = \tr_{\mathcal{J}_\alpha^c}[\tilde{X}]$ for all $\alpha = 1, \ldots, M$. The output $\vb{z}$ is also a two-channel tensor, and its matrix representation $Z$ can be obtained by taking the first channel as the real part and the second channel as the imaginary part.
+obtained by composing Eq.~\eqref{eq:qmp-mio} for a given set $\{\sigma_{\mathcal{J}_\alpha}\}_{\alpha=1}^{M}$ of quantum marginals, with $\rho$ serving as an initial seed state. The term ``corrupted'' refers to the presence of negative eigenvalues in the matrix $\tilde{X}$, which indicates that it is not a valid quantum state, although it still contains the quantum marginals, that is, $\sigma_{\mathcal{J}_\alpha} = \Tr_{\mathcal{J}_\alpha^c}[\tilde{X}]$ for all $\alpha = 1, \ldots, M$. The output $\vb{z}$ is also a two-channel tensor, and its matrix representation $Z$ can be obtained by taking the first channel as the real part and the second channel as the imaginary part.
 
 In addition, we explore an approach that involves using the output of the CDAE as an initial seed for the MIO. Since the MIO is capable of reconstructing global states that match the given marginals with perfect fidelities but often suffers from the issue of producing unphysical outputs, this hybrid strategy could mitigate the problem. By providing a well-structured initial guess from the trained autoencoder, the MIO may produce physically valid density matrices more reliably.
 
@@ -130,7 +130,7 @@ We consider rank-$r$ density matrices $\rho^{(\beta)}$, generated according to t
 \item Sample $r$ pure states $\ket{\psi_i^\beta}$ from the Haar measure.
 \item Form the density matrix $\rho^{(\beta)} = \sum_{i=1}^{r} p_i^\beta \dyad{\psi_i^\beta}$.
 \end{enumerate}
-Thus, we generate $\rho^{(\beta)}$ and then, using the partial trace $\sigma_{\mathcal{J}_\alpha} = \tr_{\mathcal{J}_\alpha^c}\qty[\rho^{(\beta)}]$, we obtain the elements of $\mathcal{M}_\beta$. With $\mathcal{M}_\beta$, we find $\tilde{X}_\beta$ using Eq.~\eqref{eq:qmp-corrupted} and then its two-channel representation $\tilde{\vb{x}}_\beta$. This procedure is repeated $N_S$ times to form the training set.
+Thus, we generate $\rho^{(\beta)}$ and then, using the partial trace $\sigma_{\mathcal{J}_\alpha} = \Tr_{\mathcal{J}_\alpha^c}\qty[\rho^{(\beta)}]$, we obtain the elements of $\mathcal{M}_\beta$. With $\mathcal{M}_\beta$, we find $\tilde{X}_\beta$ using Eq.~\eqref{eq:qmp-corrupted} and then its two-channel representation $\tilde{\vb{x}}_\beta$. This procedure is repeated $N_S$ times to form the training set.
 
 \subsection{The loss function}
 \label{sec:qmp-loss}
@@ -141,7 +141,7 @@ To train the CDAE, we define a loss function that ensures that the output is a P
 \mathcal{L} = \epsilon\qty(\Re(U), \id) + \epsilon\qty(\Im(U), \vb{0})
 + \sum_{i}^{\abs{\mathcal{M}_\beta}} \epsilon\qty(\sigma_{\mathcal{J}_i}, z_{\mathcal{J}_i}),
 \end{equation}
-where $\epsilon(\cdot, \cdot)$ denotes the mean square error, $\id$ is the identity matrix, and $\vb{0}$ is the zero matrix. The first two terms in Eq.~\eqref{eq:qmp-loss} ensure that the output matrix $Z$ is PSD, while the third term accounts for the quantum marginals, with $z_{\mathcal{J}_i} = \tr_{\mathcal{J}_i^c}[Z]$ representing the output marginal. Although a term $\epsilon(\tr[Z], 1)$ could be explicitly included in Eq.~\eqref{eq:qmp-loss} to guarantee normalization, this constraint is approximately satisfied without the need to enforce it explicitly. The final output matrix can be renormalized as $Z/\tr[Z]$ to ensure exact normalization. Additionally, in practice, $Z$ is approximately Hermitian, which can be fixed by setting $Z = (Z + Z^\dagger)/2$, thus avoiding non-real eigenvalues.
+where $\epsilon(\cdot, \cdot)$ denotes the mean square error, $\id$ is the identity matrix, and $\vb{0}$ is the zero matrix. The first two terms in Eq.~\eqref{eq:qmp-loss} ensure that the output matrix $Z$ is PSD, while the third term accounts for the quantum marginals, with $z_{\mathcal{J}_i} = \Tr_{\mathcal{J}_i^c}[Z]$ representing the output marginal. Although a term $\epsilon(\Tr[Z], 1)$ could be explicitly included in Eq.~\eqref{eq:qmp-loss} to guarantee normalization, this constraint is approximately satisfied without the need to enforce it explicitly. The final output matrix can be renormalized as $Z/\Tr[Z]$ to ensure exact normalization. Additionally, in practice, $Z$ is approximately Hermitian, which can be fixed by setting $Z = (Z + Z^\dagger)/2$, thus avoiding non-real eigenvalues.
 
 \subsection{Training and transfer learning}
 \label{sec:qmp-training}
@@ -164,7 +164,7 @@ To assess the accuracy of the predicted quantum marginals, we use the mean fidel
 \begin{equation}
 F_\beta = \frac{1}{\abs{\mathcal{M}_\beta}} \sum_{i=1}^{\abs{\mathcal{M}_\beta}} F\qty(\sigma_{\mathcal{J}_i}, z_{\mathcal{J}_i}),
 \qquad
-F\qty(\sigma_{\mathcal{J}_i}, z_{\mathcal{J}_i}) = \tr\qty[ \sqrt{ \sqrt{\sigma_{\mathcal{J}_i}}\, z_{\mathcal{J}_i} \sqrt{\sigma_{\mathcal{J}_i}} } ]^2,
+F\qty(\sigma_{\mathcal{J}_i}, z_{\mathcal{J}_i}) = \Tr\qty[ \sqrt{ \sqrt{\sigma_{\mathcal{J}_i}}\, z_{\mathcal{J}_i} \sqrt{\sigma_{\mathcal{J}_i}} } ]^2,
 \end{equation}
 the fidelity between the target marginal $\sigma_{\mathcal{J}_i}$ and the predicted marginal $z_{\mathcal{J}_i}$, as given directly by Eq.~\eqref{eq:fidelity}, so that $F \in [0,1]$ and $F = 1$ if and only if the two marginals coincide --- the same convention adopted for the gate fidelity in Chapter~\ref{sec:quantum_information}. The mean fidelity $F_{\mathrm{mean}}$ is obtained by averaging $F_\beta$ over all samples in the test set, $F_{\mathrm{mean}} = \sum_{\beta=1}^{N_{\mathrm{test}}} F_\beta / N_{\mathrm{test}}$, where $N_{\mathrm{test}}$ is the number of samples. To show variability in the data, we use the standard deviation (SD), calculated as
 \begin{equation}

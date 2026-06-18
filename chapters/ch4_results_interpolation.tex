@@ -3,37 +3,27 @@
 
 This chapter presents the first main application developed in this thesis: a physics-informed deep learning framework for estimating the unitary time-evolution operator of quantum systems governed by time-dependent Hamiltonians over a full time domain. The results reported here correspond to the work submitted for publication in \textit{Machine Learning: Science and Technology}~\cite{guerra2026interpolation}. % <- add your own preprint/paper entry to references.bib
 
-The theoretical background required for this chapter was developed in Chapter~2: the von Neumann equation and its formal solution in terms of the time-ordered exponential, the Dyson series, the Magnus expansion, the Trotter product formula, the Pauli-basis representation of $N$-qubit operators, and the gate fidelity between unitary channels obtained through the Choi--Jamio\l{}kowski isomorphism. The deep learning machinery --- fully connected architectures, loss functions, gradient-based optimization, and the physics-informed paradigm --- was introduced in Chapter~3. In accordance with Chapter~2, natural units with $\hbar = 1$ are used throughout this chapter.
+The theoretical background required for this chapter was developed in Chapter~\ref{sec:quantum_information}: the von Neumann equation~\eqref{eq:von_neumann} and its formal solution in terms of the time-ordered exponential~\eqref{eq:time_ordered_exponential}, the Magnus expansion~\eqref{eq:magnus}, the Trotter product formula~\eqref{eq:trotter}, the Pauli-basis representation of $N$-qubit operators (Section~\ref{sec:pauli_basis}), and the gate fidelity~\eqref{eq:gate_fidelity} between unitary channels obtained through the Choi--Jamio\l{}kowski isomorphism~\eqref{eq:choi}. The deep learning machinery --- fully connected architectures~\eqref{eq:fully-connected-network}, loss functions (Section~\ref{sec:loss_functions}), gradient-based optimization (Section~\ref{sec:optimization}), and the physics-informed paradigm (Section~\ref{sec:pinns}) --- was introduced in Chapter~\ref{sec:deep_learning}. In accordance with Chapter~\ref{sec:quantum_information}, natural units with $\hbar = 1$ are used throughout this chapter.
 
 %-----------------------------------------------------------
 \section{Problem statement}
 \label{sec:res-problem}
 
-A fundamental challenge in quantum theory is the accurate modeling of the dynamics of quantum systems driven by time-dependent Hamiltonians. Unlike the time-independent case, where the time-evolution operator reduces to a simple matrix exponential $e^{-iHt}$, time-dependent Hamiltonians give rise to the time-ordering operator, which precludes a closed-form solution and introduces substantial mathematical and numerical complexity. The cost of any direct approach is further compounded by the exponential growth of the Hilbert space~\cite{lloyd1996}, together with the rapidly growing number of terms required in the series expansions used to represent the time-dependent evolution operator $U(t)$: for an $N$-qubit system the evolution operator is a $2^N \times 2^N$ matrix, and its dense construction or exponentiation scales as $\mathcal{O}(2^{3N})$. Expansions such as the Dyson or Magnus series, discussed in Chapter~2, involve nested time integrals whose number grows with the expansion order, and the associated numerical errors tend to accumulate over long evolution times~\cite{wiebe_simulating_2011, blanes2009}. Even on quantum hardware, simulating time-dependent dynamics is generally more demanding than the time-independent case, particularly for rapidly varying or highly oscillatory Hamiltonians~\cite{an2022}. Despite these difficulties, time-dependent Hamiltonians play a central role in quantum technologies, including quantum control and gate optimization~\cite{Ansel_2024}, as well as quantum simulation of complex many-body systems~\cite{georgescu2014, cao2025}.
+A fundamental challenge in quantum theory is the accurate modeling of the dynamics of quantum systems driven by time-dependent Hamiltonians. Unlike the time-independent case, where the time-evolution operator reduces to a simple matrix exponential $e^{-iHt}$, time-dependent Hamiltonians give rise to the time-ordering operator, which precludes a closed-form solution and introduces substantial mathematical and numerical complexity. The cost of any direct approach is further compounded by the exponential growth of the Hilbert space~\cite{lloyd1996}, together with the rapidly growing number of terms required in the series expansions used to represent the time-dependent evolution operator $U(t)$: for an $N$-qubit system the evolution operator is a $2^N \times 2^N$ matrix, and its dense construction or exponentiation scales as $\mathcal{O}(2^{3N})$. Expansions such as the Dyson or Magnus series, discussed in Chapter~\ref{sec:quantum_information}, involve nested time integrals whose number grows with the expansion order, and the associated numerical errors tend to accumulate over long evolution times~\cite{wiebe_simulating_2011, blanes2009}. Even on quantum hardware, simulating time-dependent dynamics is generally more demanding than the time-independent case, particularly for rapidly varying or highly oscillatory Hamiltonians~\cite{an2022}. Despite these difficulties, time-dependent Hamiltonians play a central role in quantum technologies, including quantum control and gate optimization~\cite{Ansel_2024}, as well as quantum simulation of complex many-body systems~\cite{georgescu2014, cao2025}.
 
 Several approaches have been developed to address this challenge. Methods based on truncated Dyson series expansions have shown promising results in handling the time-ordering operator~\cite{berry_2015, krieferova_2019}. Magnus-expansion-based algorithms have proven particularly effective in quantum control~\cite{Dalgaard_2022}, and recent work has extended these to highly-oscillatory Hamiltonians relevant to near-term quantum devices~\cite{chen_quantum_2023, fang_time-dependent_2024}. Modified Suzuki--Trotter decompositions have been proposed for interpolating unitary operators in time-dependent settings~\cite{schilling2024}. Tensor-network methods provide a complementary route: they enable efficient classical simulation of one-dimensional systems through time-evolving block decimation~\cite{vidal_efficient_2004}, and recent constructions optimize Suzuki--Trotter decompositions for Hamiltonian simulation and adiabatic quantum computing~\cite{tepaske2023, causer2024}. On the machine learning side, PINNs have been explored to learn quantum dynamics under physical constraints~\cite{norambuena2024}, as well as to reconstruct time-dependent Hamiltonians using deep learning models~\cite{che_2021, han_2021}. Other measurement-based protocols have also been proposed for this task~\cite{franceschetto2025}.
 
 The specific problem addressed in this chapter is the following. Starting from the knowledge of the time-evolution operator $U(t_i)$ on a finite set $\{t_i\}$ ($i=1,\dots,N$) of times with $t_i\in[0,T]$, we seek to interpolate $U(t)$ over the entire time interval $[0,T]$. The model takes a single scalar, the time $t$, as input and returns the corresponding time-evolution operator. Crucially, the time-dependent Hamiltonian itself is not provided to the model; it learns the dynamics solely from the sampled unitaries $U(t_i)$ and the associated evolved states. Throughout this chapter, the training data are generated numerically, but are intended to play the role of experimental data that, in practice, would be obtained, for example, by quantum process tomography (QPT). Each model is trained to represent the dynamics of a single Hamiltonian realization; learning a mapping that generalizes across different Hamiltonians is beyond the scope of this work.
 
-In the language of Chapter~2, given a known set of discrete data $\left\{ \rho_0, \rho(t_i) \right\}_{i=1}^{N_1}$ or $\left\{ U(t_j,t_0) \right\}_{j=1}^{N_2}$, where the states evolve according to
-\begin{equation}
-  \label{eq:res-state-evolution}
-  \rho (t) = U(t, t_0)\, \rho(t_0)\, U^{\dagger}(t, t_0),
-\end{equation}
-the task is to find the continuous function $U(t, t_0)$, with
-\begin{equation}
-  \label{eq:res-unitary-evolution}
-  U(t, t_0) = \mathcal{T} \exp \qty( -i\int_{t_0}^{t} H(\xi)\, \dd{\xi} ),
-\end{equation}
-where $\mathcal{T}$ denotes the time-ordering operator. For simplicity we take $t_0 = 0$, such that $U(t,t_0) = U(t)$.
+In the language of Chapter~\ref{sec:quantum_information}, the available information consists of a known set of discrete data, either evolved states $\left\{ \rho_0, \rho(t_i) \right\}_{i=1}^{N_1}$ or sampled unitaries $\left\{ U(t_j,t_0) \right\}_{j=1}^{N_2}$, where the states evolve according to \textit{Postulate~2}, $\rho(t_i) = U(t_i,t_0)\,\rho_0\,U^{\dagger}(t_i,t_0)$, and the sampled unitaries are solutions of the von Neumann dynamics, see Eq.~\eqref{eq:von_neumann}. From this discrete data the model is trained to reconstruct $U(t)$ over the full interval $[0,T]$.
 
-Our method is based on the PINN framework introduced in Section~3.7, in which known physical constraints are explicitly incorporated into the training process to guide the learning of physically consistent solutions. Due to the exponential growth of the Hilbert space with the number of qubits, we train separate models per system size and test two distinct model architectures: (i) a model trained to directly predict the unitary operator $U(t)$, and (ii) a model that predicts the coefficients of an effective time-dependent Hamiltonian $H_\mathrm{eff}(t)$, from which $U(t)$ is subsequently computed via the Magnus expansion or Trotterization. The motivation for the second architecture is scalability: by reducing the task from learning the full unitary to learning an effective Hamiltonian, the number of free parameters is drastically reduced, lowering the computational resources required for training.
+Our method is based on the PINN framework introduced in Section~\ref{sec:pinns}, in which known physical constraints are explicitly incorporated into the training process to guide the learning of physically consistent solutions. Due to the exponential growth of the Hilbert space with the number of qubits, we train separate models per system size and test two distinct model architectures: (i) a model trained to directly predict the unitary operator $U(t)$, and (ii) a model that predicts the coefficients of an effective time-dependent Hamiltonian $H_\mathrm{eff}(t)$, from which $U(t)$ is subsequently computed via the Magnus expansion or Trotterization. The motivation for the second architecture is scalability: by reducing the task from learning the full unitary to learning an effective Hamiltonian, the number of free parameters is drastically reduced, lowering the computational resources required for training.
 
 %-----------------------------------------------------------
 \section{Physical systems}
 \label{sec:res-systems}
 
-We consider three types of Hamiltonians across different many-body configurations, all expressed in the $N$-qubit Pauli basis introduced in Section~2.5. For systems with up to 6 qubits, we employ the general Hamiltonian containing all possible Pauli components; for systems with 7 or 8 qubits, we restrict the Hamiltonian to two reduced nearest-neighbor models: an Ising model and an $XYZ$ Heisenberg model. These are explicitly given by
+We consider three types of Hamiltonians across different many-body configurations, all expressed in the $N$-qubit Pauli basis introduced in Section~\ref{sec:pauli_basis}. For systems with up to 6 qubits, we employ the general Hamiltonian containing all possible Pauli components; for systems with 7 or 8 qubits, we restrict the Hamiltonian to two reduced nearest-neighbor models: an Ising model and an $XYZ$ Heisenberg model. These are explicitly given by
 \begin{align}
 H_{\mathrm{general}}(t)
 &=
@@ -61,7 +51,7 @@ J_j^x(t)\, \sigma_j^x \sigma_{j+1}^x
 \end{align}
 Here each index $\alpha_j \in \{ I, x, y, z \}$ labels the Pauli operator acting on the $j$-th qubit, the real-valued coefficients $c_{\alpha_1 \cdots \alpha_N}(t)$ carry the full time dependence, and $\sigma_j^{x,y,z}$ denote the Pauli operators acting on the $j$-th qubit. In the Ising model, $J_j(t)$ is the time-dependent coupling strength between neighboring qubits $j$ and $j+1$, while $h_j(t)$ is the time-dependent longitudinal field acting on qubit $j$. In the $XYZ$ Heisenberg model, $J_j^x(t)$, $J_j^y(t)$, and $J_j^z(t)$ are the time-dependent nearest-neighbor exchange couplings along the $x$, $y$, and $z$ directions, respectively. All coupling and field coefficients are real-valued functions of time. For brevity, we collect the indices into a multi-index $\vec{\alpha} \equiv (\alpha_1, \ldots, \alpha_N)$, so that $c_{\vec{\alpha}}(t) \equiv c_{\alpha_1 \cdots \alpha_N}(t)$ and $\sigma_{\vec{\alpha}} \equiv \sigma_{\alpha_1} \otimes \cdots \otimes \sigma_{\alpha_N}$.
 
-The choice of a fully non-zero Pauli Hamiltonian for systems up to 6 qubits is motivated by its generality: since any $N$-qubit Hamiltonian can be expressed as a linear combination of all Pauli tensor products (cf.~Section~2.5), a model capable of reproducing the dynamics generated by such a Hamiltonian should, in principle, be capable of handling any sparser Hamiltonian as a special case. This choice serves as a proof of principle: an architecture expressive enough to represent the dynamics of such a general Hamiltonian is, \textit{a fortiori}, expressive enough to represent that of any sparser, physically motivated Hamiltonian, although each case requires training a dedicated model on its own data. For systems of 7 and 8 qubits, computational constraints required the use of more structured Hamiltonians that are directly relevant to physically realizable systems. The nearest-neighbor Ising model with longitudinal couplings and fields describes the effective spin dynamics in trapped-ion quantum simulators~\cite{Kim2011}, superconducting qubit architectures~\cite{Wu2016}, and quantum annealing devices such as D-Wave processors, where a time-dependent Hamiltonian drives the system toward the ground state of a programmable Ising problem~\cite{Kadowaki1998}. The nearest-neighbor $XYZ$ Heisenberg model describes anisotropic exchange interactions present in magnetic materials~\cite{Coldea2001}, has been experimentally realized in trapped-ion chains~\cite{Kim2012, Grass2014}, and serves as the effective low-energy Hamiltonian in silicon spin-qubit platforms~\cite{Zajac2018} and nuclear magnetic resonance quantum processors~\cite{Zhang2005}.
+The choice of a fully non-zero Pauli Hamiltonian for systems up to 6 qubits is motivated by its generality: since any $N$-qubit Hamiltonian can be expressed as a linear combination of all Pauli tensor products (cf.~Section~\ref{sec:pauli_basis}), a model capable of reproducing the dynamics generated by such a Hamiltonian should, in principle, be capable of handling any sparser Hamiltonian as a special case. This choice serves as a proof of principle: an architecture expressive enough to represent the dynamics of such a general Hamiltonian is, \textit{a fortiori}, expressive enough to represent that of any sparser, physically motivated Hamiltonian, although each case requires training a dedicated model on its own data. For systems of 7 and 8 qubits, computational constraints required the use of more structured Hamiltonians that are directly relevant to physically realizable systems. The nearest-neighbor Ising model with longitudinal couplings and fields describes the effective spin dynamics in trapped-ion quantum simulators~\cite{Kim2011}, superconducting qubit architectures~\cite{Wu2016}, and quantum annealing devices such as D-Wave processors, where a time-dependent Hamiltonian drives the system toward the ground state of a programmable Ising problem~\cite{Kadowaki1998}. The nearest-neighbor $XYZ$ Heisenberg model describes anisotropic exchange interactions present in magnetic materials~\cite{Coldea2001}, has been experimentally realized in trapped-ion chains~\cite{Kim2012, Grass2014}, and serves as the effective low-energy Hamiltonian in silicon spin-qubit platforms~\cite{Zajac2018} and nuclear magnetic resonance quantum processors~\cite{Zhang2005}.
 
 For all cases, the time-dependent coefficients take the form
 \begin{equation}
@@ -70,7 +60,7 @@ c_{\vec{\alpha}}(t) = \frac{A_{\vec{\alpha}} \sin(\omega_{\vec{\alpha}}\, t + \p
 \end{equation}
 where $A_{\vec{\alpha}}$, $\omega_{\vec{\alpha}}$, and $\phi_{\vec{\alpha}}$ are the amplitude, angular frequency, and phase shift of each component, respectively, and $\mathcal{N}_N$ is a system-size-dependent normalization factor introduced to control the operator norm of the Hamiltonian, ensuring the convergence of the Magnus expansion (see Section~\ref{sec:res-integration}). The parameters are independently drawn from uniform distributions: $\omega_{\vec{\alpha}}, \phi_{\vec{\alpha}} \in [0, 2\pi)$ and $A_{\vec{\alpha}} \in [0, 1)$. Once fixed for a given realization, they remain constant throughout training. The same functional form is used for the coupling and field coefficients of the Ising and $XYZ$ systems.
 
-The number of independent coefficients depends on the Hamiltonian structure: $4^N$ for the general Pauli case, $2N-1$ for the Ising model, and $3(N-1)$ for the $XYZ$ model. The normalization factors are
+The number of independent coefficients depends on the Hamiltonian structure: $4^N-1$ for the general Pauli case (the global identity component is fixed to zero, see below), $2N-1$ for the Ising model, and $3(N-1)$ for the $XYZ$ model. The normalization factors are
 \begin{equation}
 \mathcal{N}_2 = 2,\quad \mathcal{N}_3 = 3,\quad \mathcal{N}_4 = 4,\quad \mathcal{N}_5 = 16,\quad \mathcal{N}_6 = 24,
 \end{equation}
@@ -82,9 +72,9 @@ The use of randomly sampled parameters allows the generation of a diverse ensemb
 \section{Model description}
 \label{sec:res-model}
 
-The rationale for employing PINNs lies in their capability to incorporate physical and mathematical constraints directly into the training process. As discussed in Chapter~3, PINNs have demonstrated outstanding performance in solving nonlinear differential equations and in modeling complex dynamical systems~\cite{Raissi2019, karniadakis2021}. Furthermore, neural networks consistently exhibit advantages in interpolation accuracy and adaptability to complex boundary and initial condition constraints.
+The rationale for employing PINNs lies in their capability to incorporate physical and mathematical constraints directly into the training process. As discussed in Chapter~\ref{sec:deep_learning}, PINNs have demonstrated outstanding performance in solving nonlinear differential equations and in modeling complex dynamical systems~\cite{Raissi2019, karniadakis2021}. Furthermore, neural networks consistently exhibit advantages in interpolation accuracy and adaptability to complex boundary and initial condition constraints.
 
-We employ a model that generates a unitary complex-valued matrix from a scalar input. The dimensionality of these matrices increases exponentially with the number of qubits as $4^N$. Figure~\ref{fig:res-scalability} shows the number of trainable parameters for models up to 6 qubits, as well as the estimated parameter counts required for 7- and 8-qubit systems. Since the optimization process becomes computationally intractable at larger scales, an alternative strategy is adopted for these higher-dimensional cases. Rather than merely constraining the Hamiltonian to a reduced set of components, the model is constructed to estimate an effective time-dependent set of coefficients defining the effective Hamiltonian of the system $H_{\mathrm{eff}}(t)$. Subsequently, with a model capable of generating $H_{\mathrm{eff}}(t)$, we can use it to compute the time-evolution operator through (i) the Magnus expansion or (ii) the Trotterization. This approach reduces the number of trainable parameters to approximately $10^3$.
+We employ a model that generates a unitary complex-valued matrix from a scalar input. The number of complex entries of these matrices increases exponentially with the number of qubits as $4^N$. Figure~\ref{fig:res-scalability} shows the number of trainable parameters for models up to 6 qubits, as well as the estimated parameter counts required for 7- and 8-qubit systems. Since the optimization process becomes computationally intractable at larger scales, an alternative strategy is adopted for these higher-dimensional cases. Rather than merely constraining the Hamiltonian to a reduced set of components, the model is constructed to estimate an effective time-dependent set of coefficients defining the effective Hamiltonian of the system $H_{\mathrm{eff}}(t)$. Subsequently, with a model capable of generating $H_{\mathrm{eff}}(t)$, we can use it to compute the time-evolution operator through (i) the Magnus expansion or (ii) the Trotterization. This approach reduces the number of trainable parameters to approximately $10^3$.
 
 \begin{figure}[htbp]
   \centering
@@ -107,14 +97,14 @@ We employ a model that generates a unitary complex-valued matrix from a scalar i
   \vspace{1mm}
   {\small (b) PINN model for 7 and 8 qubits.}
 
-  \caption[The two PINN architectures used to emulate the temporal evolution of multi-qubit systems]{The two PINN architectures used to emulate the temporal evolution of isolated multi-qubit systems. The network $f_\theta$ takes time $t$ as input and is trained via backpropagation. (a) For 2–6 qubits, it directly predicts the unitary $U_\theta(t,t_0)$, optimized using unitarity, unitary, and state losses. (b) For 7–8 qubits, it predicts an effective Hamiltonian $H_{\mathrm{eff}}(t)$, which is converted into $U_\theta(t,t_0)$ through a propagation layer; unitarity is therefore guaranteed by construction. Colors: blue, inputs/outputs; orange, learned quantities; purple, predicted state; dashed green, reference and target quantities; red, losses and optimization path.}
+  \caption[The two PINN architectures used to emulate the temporal evolution of multi-qubit systems]{The two PINN architectures used to emulate the temporal evolution of isolated multi-qubit systems. The network $f_\theta$ takes time $t$ as input and is trained via backpropagation. (a) For 2--6 qubits, it directly predicts the unitary $U_\theta(t,t_0)$, optimized using unitarity, unitary, and state losses. (b) For 7--8 qubits, it predicts an effective Hamiltonian $H_{\mathrm{eff}}(t)$, which is converted into $U_\theta(t,t_0)$ through a propagation layer; unitarity is therefore guaranteed by construction. Colors: blue, inputs/outputs; orange, learned quantities; purple, predicted state; dashed green, reference and target quantities; red, losses and optimization path.}
   \label{fig:res-models-description}
 \end{figure}
 
 \subsection{Architecture description}
 \label{sec:res-architecture}
 
-For the model architecture, we employ a straightforward approach consisting of a sequence of fully connected layers (cf.~Section~3.3) designed to match the number of parameters required for the output matrix. The hyperbolic tangent function is used as the activation function. This architecture can generate arbitrarily complex-valued matrices, ensuring that the model can accurately represent any matrix form of the time-evolution operator. Figure~\ref{fig:res-models-description} schematically illustrates the two modeling strategies adopted for the time-evolution operator.
+For the model architecture, we employ a straightforward approach consisting of a sequence of fully connected layers (cf.~Section~\ref{sec:neural_networks}) designed to match the number of parameters required for the output matrix. The hyperbolic tangent function is used as the activation function. This architecture can generate arbitrarily complex-valued matrices, ensuring that the model can accurately represent any matrix form of the time-evolution operator. Figure~\ref{fig:res-models-description} schematically illustrates the two modeling strategies adopted for the time-evolution operator.
 
 \paragraph{Cases with 2 to 6 qubits.}
 The model's internal data processing involves several fully connected layers. Initially, the input layer takes a scalar input corresponding to time. This input is processed through fully connected layers that progressively increase the dimensionality of the latent representation. After each hidden layer, a hyperbolic tangent activation function is applied. The resulting features are then reshaped into tensors of dimension $(2, 2^N, 2^N)$, where the first index is used to construct the real and imaginary parts of the resulting complex-valued matrix. A detailed description of each architecture is presented in Table~\ref{tab:res-model-architecture}.
@@ -222,7 +212,7 @@ Reshape & 8192 & $(2,64,64)$ \\
 \end{table}
 
 \paragraph{Cases with 7 and 8 qubits.}
-For the models handling 7 and 8 qubits, the architecture follows a similar structure to the previous models but differs significantly in the output layer. Instead of generating a complex-valued matrix directly, the output layer produces time-dependent coefficients associated with the Pauli basis representation of the Hamiltonian $H(t)$ (cf.~Section~2.5). A detailed description of these architectures is presented in Table~\ref{tab:res-model-architecture2}.
+For the models handling 7 and 8 qubits, the architecture follows a similar structure to the previous models but differs significantly in the output layer. Instead of generating a complex-valued matrix directly, the output layer produces time-dependent coefficients associated with the Pauli basis representation of the Hamiltonian $H(t)$ (cf.~Section~\ref{sec:pauli_basis}). The output dimension therefore equals the number of independent Hamiltonian coefficients, namely $2N-1$ for the Ising model ($13$ and $15$ for $N=7,8$) and $3(N-1)$ for the $XYZ$ model ($18$ and $21$). A detailed description of these architectures is presented in Table~\ref{tab:res-model-architecture2}, where the output sizes shown correspond to the Ising case.
 
 \begin{table}[htbp]
 \centering
@@ -257,7 +247,7 @@ Linear 2 & 50 & 15 \\
 \end{tabular}
 \end{minipage}
 
-\caption[Architectures of \textit{model7} and \textit{model8}]{Architectures of \textit{model7} and \textit{model8}, designed to generate real-valued coefficients associated with the Pauli basis representation of the Hamiltonian from a scalar temporal input $t$.}
+\caption[Architectures of \textit{model7} and \textit{model8}]{Architectures of \textit{model7} and \textit{model8}, designed to generate the real-valued coefficients of the Pauli-basis representation of the Hamiltonian from a scalar temporal input $t$. The output sizes shown ($13$ and $15$) correspond to the Ising model ($2N-1$); for the $XYZ$ model the output size is $3(N-1)$, i.e.\ $18$ and $21$ for $N=7,8$.}
 \label{tab:res-model-architecture2}
 \end{table}
 
@@ -266,20 +256,20 @@ Linear 2 & 50 & 15 \\
 \subsection{Loss function and data generation}
 \label{sec:res-loss-function}
 
-To train the model, a valid dataset is required. The dataset generation process is inspired by the idea that it can be interpreted as the outcome of multiple QPT experiments performed at different times~\cite{huang2025}. If the goal is to perform a quantum control task, the dataset will consist of a set of quantum states forming a trajectory and target unitary operators applied at specific times $t$. However, for practical purposes, the dataset is generated numerically by computing the system dynamics using Eqs.~\eqref{eq:res-state-evolution} and \eqref{eq:res-unitary-evolution}.
+To train the model, a valid dataset is required. The dataset generation process is inspired by the idea that it can be interpreted as the outcome of multiple QPT experiments performed at different times~\cite{huang2025}. If the goal is to perform a quantum control task, the dataset will consist of a set of quantum states forming a trajectory and target unitary operators applied at specific times $t$. However, for practical purposes, the dataset is generated numerically by computing the system dynamics: the states evolve according to Eq.~\eqref{eq:postulate2}, and the corresponding unitaries $U(t)$ are obtained from the Trotter product formula~[Eq.~\eqref{eq:trotter}].
 
 Employing the Magnus expansion or the Trotterization method increases the computational cost, as these calculations must be performed at each training iteration to update the model parameters. To mitigate this, the Magnus expansion is truncated at second order. For both the Magnus and Trotterization approaches, we use 50 integration steps per model query, i.e., each time the model produces an output.
 
 Furthermore, a single QPT is insufficient to accurately characterize $U(t)$. In principle, achieving near-perfect fidelities over a continuous time domain would require an infinite number of QPTs due to its continuous nature. Nevertheless, models such as the one proposed here help to reduce the required measurement cost. The study focuses on the time interval $t \in [0, 1]$, employing discrete time grids with step sizes of $\Delta t = 0.1, 0.25, 0.5$, and $1.0$. This procedure yields a comprehensive dataset for the selected time values, essential for effective model training. A training dataset $\left\{ \left( \rho_0^i, \tau_i, \rho_{\tau_i}^i, U_{\tau_i} \right) \right\}_{i=1}^{N_{\mathrm{train}}}$, with $N_{\mathrm{train}} = 11000$, was generated, where the target unitaries $U_{\tau_i}$ are known and the evolved states satisfy $\rho_{\tau_i}^i = U(\tau_i,0)\, \rho_0^i\, U^{\dagger}(\tau_i,0)$. The evolution times $\tau_i \in [0,1]$ are sampled from uniform time grids corresponding to different choices of the time step $\Delta t$. The initial states $\rho_0^i$ are random mixed states sampled from the Hilbert--Schmidt measure~\cite{zyczkowski2001}: a complex matrix $G$ with independent Gaussian real and imaginary entries is drawn, and the state is obtained as $\rho_0 = G G^\dagger / \Tr(G G^\dagger)$, which is Hermitian, positive semi-definite, and normalized by construction.
 
-The loss function is defined as an objective function whose minimization yields the optimal parameters of the deep learning model, such that the resulting model accurately describes the dynamics of the physical system under consideration. It is constructed to explicitly incorporate the known physical constraints governing the system dynamics, as well as the available supervision data. In particular, it enforces consistency with unitary quantum evolution, agreement with known unitary operators when available, and compliance with the von Neumann equation introduced in Section~2.4. The total loss function is defined as
+The loss function is defined as an objective function whose minimization yields the optimal parameters of the deep learning model, such that the resulting model accurately describes the dynamics of the physical system under consideration. It is constructed to explicitly incorporate the known physical constraints governing the system dynamics, as well as the available supervision data. In particular, it enforces consistency with the unitary evolution of states (\textit{Postulate~2}, Eq.~\eqref{eq:postulate2}), agreement with known unitary operators when available, and the unitarity of the predicted time-evolution operator. The total loss function is defined as
 \begin{align}
   \label{eq:res-loss}
   \mathcal{L} ={}& \frac{1}{N_{\mathrm{train}}} \sum_{i=1}^{N_{\mathrm{train}}} \qty( \norm{ \rho_{\tau_i}^i - U_{\theta}(\tau_i)\, \rho_0^i\, U_{\theta}^{\dagger}(\tau_i) }
   + \norm{ U_{\theta}(\tau_i) - U_{\tau_i} } ) \nonumber \\
   & + \frac{1}{N_f} \sum_{k=1}^{N_f} \norm{ \id - U_{\theta}(t_k)\, U_{\theta}^{\dagger}(t_k) },
 \end{align}
-where $\norm{A} = \sum_{ij} |a_{ij}|$ denotes the element-wise $\ell_1$ matrix norm for any matrix $A = [a_{ij}]$, and $U_{\theta}(t)$ represents a neural network parametrization of the time-evolution operator with trainable weights $\theta = \{ \theta_i \}$. As discussed in Section~3.7, Physics-Informed Neural Networks employ such neural representations to approximate unknown physical quantities while enforcing governing equations and constraints directly through the loss function~\cite{Raissi2019}.
+where $\norm{A} = \sum_{ij} |a_{ij}|$ denotes the element-wise $\ell_1$ matrix norm for any matrix $A = [a_{ij}]$, and $U_{\theta}(t)$ represents a neural network parametrization of the time-evolution operator with trainable weights $\theta = \{ \theta_i \}$. As discussed in Section~\ref{sec:pinns}, Physics-Informed Neural Networks employ such neural representations to approximate unknown physical quantities while enforcing governing equations and constraints directly through the loss function~\cite{Raissi2019}.
 
 Here, $N_{\mathrm{train}}$ denotes the number of available state--unitary training pairs, while $N_f$ corresponds to the number of temporal collocation points used to enforce unitarity across the time domain. The first term of the loss enforces accurate quantum state evolution under the predicted unitary operator $U_{\theta}$. The second term promotes consistency between the predicted unitaries and known target unitaries, when such information is available. The third term explicitly imposes the physical constraint of unitarity by penalizing deviations from $U_{\theta}(t) U_{\theta}^{\dagger}(t) = \id$ at arbitrary times.
 
@@ -288,36 +278,14 @@ For the 7- and 8-qubit systems, only the first two terms are employed. This choi
 \subsection{Numerical integration of the effective Hamiltonian}
 \label{sec:res-integration}
 
-For systems of 7 and 8 qubits, the network $f_\theta$ outputs the Pauli-basis coefficients of an effective Hamiltonian $H_\mathrm{eff}(t)$, and a propagation layer maps it to the time-evolution operator. Two numerical methods are used for this purpose, both of which guarantee exact unitarity of the output by construction; their theoretical foundations were presented in Section~2.4, and here we describe their discrete numerical implementation.
+For systems of 7 and 8 qubits, the network $f_\theta$ outputs the Pauli-basis coefficients of an effective Hamiltonian $H_\mathrm{eff}(t)$, and a propagation layer maps it to the time-evolution operator. Two numerical methods are used for this purpose, both of which guarantee exact unitarity of the output by construction; their theoretical foundations were presented in Section~\ref{sec:quantum-dynamics}, and here we describe their discrete numerical implementation.
 
 \paragraph{Second-order Magnus expansion.}
-The Magnus expansion expresses the time-evolution operator as
+Given a target time $t$ and a number of integration steps $r$, a uniform time grid $\{t_k\}_{k=0}^{r-1}$ is constructed over $[0, t]$ with step size $\Delta t = t/r$. The neural network $f_\theta$ is evaluated at each grid point to obtain the sequence of Hamiltonians $\{H(t_k)\}_{k=0}^{r-1}$. The Magnus operator is truncated up to second order, $\Omega(t) \approx \Omega_1(t) + \Omega_2(t)$, then the time-evolution operator is recovered as
 \begin{equation}
-  \label{eq:res-magnus-exp}
-  U(t) = \exp\qty( \sum_{k=1}^{\infty} \Omega_k(t) ),
+    U(t) \approx \exp\qty(-i\, \left[ \Omega_1(t) + \Omega_2(t) \right]).
 \end{equation}
-where, truncated at second order, the exponent terms are
-\begin{align}
-  \Omega_1(t) &= -i \int_{t_0}^{t} H(\tau_1) \, \dd{\tau_1}, \\
-  \Omega_2(t) &= -\frac{1}{2} \int_{t_0}^{t} \dd{\tau_1}
-  \int_{t_0}^{\tau_1} \dd{\tau_2} \comm{H(\tau_1)}{H(\tau_2)}.
-\end{align}
-This truncation is valid when the Magnus series converges, which is guaranteed by the sufficient condition~\cite{blanes2009}
-\begin{equation}
-\int_0^T \norm{H(t)}_{\mathrm{s}} \, \dd{t} < \pi,
-\end{equation}
-where $\norm{H(t)}_{\mathrm{s}}$ denotes the spectral norm of the Hamiltonian at time $t$. This condition motivates the normalization factors $\mathcal{N}_N$ introduced in Eq.~\eqref{eq:res-coeff-form}.
 
-Given a target time $t$ and a number of integration steps $r$, a uniform time grid $\{t_k\}_{k=0}^{r-1}$ is constructed over $[0, t]$ with step size $\Delta t = t/r$. The neural network $f_\theta$ is evaluated at each grid point to obtain the sequence of Hamiltonians $\{H(t_k)\}_{k=0}^{r-1}$. The Magnus operator $\Omega(t) \approx \Omega_1(t) + \Omega_2(t)$ is then approximated as
-\begin{align}
-    \Omega_1(t) &= \sum_{k=0}^{r-1} H(t_k)\, \Delta t, \\
-    \Omega_2(t) &= -\frac{i}{2} \sum_{i=0}^{r-1} \sum_{j=0}^{i-1}
-    \comm{H(t_i)}{H(t_j)} \Delta t^2,
-\end{align}
-and the time-evolution operator is recovered as
-\begin{equation}
-    U(t) = \exp\qty(-i\,\Omega(t)).
-\end{equation}
 The full procedure is summarized in Algorithm~\ref{alg:res-magnus}.
 
 \begin{algorithm}[htbp]
@@ -335,10 +303,10 @@ The full procedure is summarized in Algorithm~\ref{alg:res-magnus}.
 \ENDFOR
 \STATE $\Omega_1 \leftarrow \sum_{k=0}^{r-1} H(t_k)\,\Delta t$
 \STATE $\Omega_2 \leftarrow \mathbf{0}$
-\FOR{$i = 0$ \TO $r-1$}
-    \FOR{$j = 0$ \TO $i-1$}
+\FOR{$m = 0$ \TO $r-1$}
+    \FOR{$n = 0$ \TO $m-1$}
         \STATE $\Omega_2 \leftarrow \Omega_2
-            - \frac{i}{2}\comm{H(t_i)}{H(t_j)}\Delta t^2$
+            - \frac{i}{2}\comm{H(t_m)}{H(t_n)}\Delta t^2$
     \ENDFOR
 \ENDFOR
 \STATE $U(t) \leftarrow \exp\qty(-i\,(\Omega_1 + \Omega_2))$
@@ -347,12 +315,7 @@ The full procedure is summarized in Algorithm~\ref{alg:res-magnus}.
 \end{algorithm}
 
 \paragraph{Trotterization.}
-The Trotterization approximates the time-ordered exponential~\cite{Trotter1959} by discretizing the time interval into $r$ subintervals of equal length $\Delta t = t/r$ and freezing the Hamiltonian within each slice,
-\begin{equation}
-  \label{eq:res-trotter}
-  U(t) \approx \prod_{k=r-1}^{0} \exp\qty(-i\,H(t_k)\,\Delta t),
-\end{equation}
-where the product is taken in chronological order (right to left). To improve accuracy over simple left-endpoint sampling, the Hamiltonian is evaluated at the midpoint of each subinterval,
+Another path to compute the unitary from a given Hamiltonian is by using the Trotterization, described along the Eq.~\eqref{eq:trotter}. Here, by discretizing the time interval into $r$ subintervals of equal length $\Delta t = t/r$ and freezing the Hamiltonian within each slice, we are able to approximate a unitary matrix that, as $r \to \infty$, converges to the exact unitary that we are looking for. To improve accuracy over simple left-endpoint sampling, the Hamiltonian is evaluated at the midpoint of each subinterval,
 \begin{equation}
     t_k = \qty(k + \frac{1}{2})\frac{t}{r},
     \quad k = 0, 1, \ldots, r-1.
@@ -360,7 +323,7 @@ where the product is taken in chronological order (right to left). To improve ac
 Since each factor $\exp(-i H(t_k)\Delta t)$ is exactly unitary, their product is also exactly unitary regardless of the step size, which is the key practical advantage of this method. The full procedure is summarized in Algorithm~\ref{alg:res-trotter}.
 
 \begin{algorithm}[htbp]
-\caption{First-order Lie--Trotter decomposition}
+\caption{Trotterization}
 \label{alg:res-trotter}
 \begin{algorithmic}[1]
 \REQUIRE Model $f_\theta$, target time $t$, operator basis $\{\sigma_\mu\}$,
@@ -393,17 +356,17 @@ The AdamW optimizer is used for training, initialized with a learning rate of $1
 \section{Results}
 \label{sec:res-results}
 
-To assess the model's performance over the entire time domain we compute 100 target unitary matrices. These matrices are uniformly spaced in time and include values not present in the training set, thereby allowing us to rigorously evaluate the model's interpolation capability. To quantify accuracy, we adopt the gate fidelity~\cite{cabrera2011} derived in Section~2.6 from the Choi--Jamio\l{}kowski representation,
+To assess the model's performance over the entire time domain we compute 100 target unitary matrices. These matrices are uniformly spaced in time and include values not present in the training set, thereby allowing us to rigorously evaluate the model's interpolation capability. To quantify accuracy, we adopt the gate fidelity~\cite{cabrera2011} derived in Section~\ref{sec:fidelity} from the Choi--Jamio\l{}kowski representation,
 \begin{equation}
   \label{eq:res-metric-fidelity}
   F(U(t), U_{\theta_{\mathrm{opt}}}(t)) = \abs{ \frac{1}{d} \Tr\qty[ U^{\dagger}(t)\, U_{\theta_{\mathrm{opt}}}(t) ] }^2,
 \end{equation}
-where $\theta_{\mathrm{opt}}$ are the optimal weights of the neural network found during training, and $d = 2^N$ denotes the Hilbert-space dimension for an $N$-qubit system. The fidelity ranges from 0 to 1, with $F = 1$ only when the predicted operator $U_{\theta_{\mathrm{opt}}}(t)$ coincides with the target $U(t)$ at time $t$.
+where $\theta_{\mathrm{opt}}$ are the optimal weights of the neural network found during training, and $d = 2^N$ denotes the Hilbert-space dimension for an $N$-qubit system. The fidelity ranges from 0 to 1, with $F = 1$ only when the predicted operator $U_{\theta_{\mathrm{opt}}}(t)$ coincides with the target $U(t)$ at time $t$, up to a global phase.
 
 For evaluation, each trained model generates unitary matrices at the same 100 time points. These predicted matrices are then compared one-by-one with the target unitaries, yielding a fidelity function $F(t)$. Since multiple models for each system size are trained with different values of $\Delta t$, four fidelity curves $F(t)$ are obtained for each system size.
 
-\subsection{Gate fidelity across system sizes}
-\label{sec:res-fidelity}
+% \subsection{Gate fidelity across system sizes}
+% \label{sec:res-fidelity}
 
 The loss function additionally enforces unitarity across the time domain, ensuring that the model's predictions remain close to unitary transformations throughout training. To further minimize numerical deviations, we can compute the closest unitary matrix to each predicted output via Singular Value Decomposition (SVD), redefining the estimated unitary as
 \begin{equation}
@@ -461,7 +424,7 @@ For the 7- and 8-qubit cases, the model follows a different strategy by estimati
 \subsection{Quantum state dynamics}
 \label{sec:res-state-dynamics}
 
-To further validate the model's ability to reproduce quantum state dynamics, we evolve a randomly sampled initial state $\rho_0$ under two distinct time-evolution operators: (i) the exact unitary $U(t)$ computed via the second-order Magnus expansion, and (ii) the unitary $U_\theta(t)$ predicted by the trained model without SVD correction. At each time $t \in [0,1]$, we compute the evolved density matrix according to Eq.~\eqref{eq:res-state-evolution} and track the diagonal elements $\rho_{ii}(t)$, which correspond to the occupation probabilities of the computational basis states. Figures~\ref{fig:res-state-dynamics-2to5} and~\ref{fig:res-state-dynamics-6to8} show these populations for systems ranging from 2 to 8 qubits, comparing the model predictions against the exact reference. In all cases, the trajectories are in close agreement, with only minor deviations consistent with the gate fidelity values reported in the preceding section.
+To further validate the model's ability to reproduce quantum state dynamics, we evolve a randomly sampled initial state $\rho_0$ under two distinct time-evolution operators: (i) the exact unitary $U(t)$ computed via the second-order Magnus expansion, and (ii) the unitary $U_\theta(t)$ predicted by the trained model without SVD correction. At each time $t \in [0,1]$, we compute the evolved density matrix according and track the diagonal elements $\rho_{ii}(t)$, which correspond to the occupation probabilities of the computational basis states. Figures~\ref{fig:res-state-dynamics-2to5} and~\ref{fig:res-state-dynamics-6to8} show these populations for systems ranging from 2 to 8 qubits, comparing the model predictions against the exact reference. In all cases, the trajectories are in close agreement, with only minor deviations consistent with the gate fidelity values reported in the preceding section.
 
 \begin{figure}[htbp]
 \centering

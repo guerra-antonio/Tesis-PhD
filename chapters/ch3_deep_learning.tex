@@ -25,7 +25,7 @@ In this chapter, we aim to clarify how these models operate internally by introd
 
 Since Deep Learning is a subfield of Machine Learning, many of the concepts employed in this area originate from the broader Machine Learning framework. In both Machine Learning and Deep Learning, the central objective is to construct algorithms that are able to learn from data rather than being explicitly programmed through fixed rules.
 
-This naturally leads to a fundamental question: what does it mean for a model to \emph{learn}? A widely accepted and operational definition is provided in Ref.~\cite{Goodfellow2016}, which states that
+This naturally leads to a fundamental question: what does it mean for a model to \emph{learn}? A widely accepted and operational definition, originally formulated by Mitchell and reproduced in Ref.~\cite{Goodfellow2016}, states that
 \begin{quote}
     A computer program is said to learn from experience $E$ with respect to some class of tasks $T$ and performance measure $P$, if its performance at tasks in $T$, as measured by $P$, improves with experience $E$.
 \end{quote}
@@ -92,18 +92,19 @@ the corresponding vector of trainable weights. The neuron computes an affine tra
 The bias parameter $b$ allows the activation function to be shifted independently of the input, thereby increasing the expressive capacity of the neuron. For a fixed activation function, the response of the neuron is entirely determined by the values of the weights and the bias, which are adjusted during training in order to satisfy the requirements of the target task.
 
 \paragraph{Forward propagation}
-Once the functioning of a single perceptron is understood, it is natural to extend the construction to a collection of perceptrons arranged in layers, forming a neural network capable of processing data. Consider a layer composed of $k$ artificial neurons. The output of the $i$-th neuron in this layer is given by
+Once the functioning of a single perceptron is understood, it is natural to extend the construction to a collection of perceptrons arranged in layers, forming a neural network capable of processing data. Consider a first layer composed of $n_1$ artificial neurons. The output of the $i$-th neuron in this layer is given by
 \begin{equation}
     \label{eq:layer_1}
-    y^{(k)}_i = f\qty( \boldsymbol{\omega}^{(k)}_i \cdot \mathbf{x} + b^{(k)}_i ),
+    a^{(1)}_i = f\qty( \boldsymbol{\omega}^{(1)}_i \cdot \mathbf{x} + b^{(1)}_i ),
+    \qquad i = 1,\dots,n_1,
 \end{equation}
-where $\boldsymbol{\omega}^{(k)}_i$ and $b^{(k)}_i$ denote the weights and bias associated with the $i$-th neuron of the layer, respectively, and $f$ is the activation function applied element-wise.
+where $\boldsymbol{\omega}^{(1)}_i$ and $b^{(1)}_i$ denote the weights and bias associated with the $i$-th neuron of the layer, respectively, and $f$ is the activation function applied element-wise. Here the superscript labels the layer index, so that $\mathbf{a}^{(1)} = (a^{(1)}_1,\dots,a^{(1)}_{n_1})$ collects the outputs of the first layer.
 
-Subsequently, additional layers can be stacked on top of the first one. For instance, if the input to the second layer is given by the output vector of the first layer, $\mathbf{y}_1 = (y^{(k)}_1,\dots,y^{(k)}_k)$, then the output of the $j$-th neuron in the second layer is
+Subsequently, additional layers can be stacked on top of the first one. For instance, if the input to the second layer is given by the output vector of the first layer, $\mathbf{a}^{(1)}$, then the output of the $j$-th neuron in the second layer is
 \begin{equation}
-    y^{(k)}_{2,j} = g \qty( \boldsymbol{\omega}^{(k)}_{2,j} \cdot \mathbf{y}_1 + b^{(k)}_{2,j} ),
+    a^{(2)}_j = g \qty( \boldsymbol{\omega}^{(2)}_j \cdot \mathbf{a}^{(1)} + b^{(2)}_j ),
 \end{equation}
-where $\boldsymbol{\omega}^{(k)}_{2,j}$ and $b^{(k)}_{2,j}$ are the weights and bias of the corresponding neuron in the second layer. The activation function $g$ may differ from $f$, although in practice it is common—but not mandatory—to use the same activation across multiple layers.
+where $\boldsymbol{\omega}^{(2)}_j$ and $b^{(2)}_j$ are the weights and bias of the corresponding neuron in the second layer. The activation function $g$ may differ from $f$, although in practice it is common—but not mandatory—to use the same activation across multiple layers.
 
 This construction can be generalized to a neural network composed of $L$ layers, where each layer introduces additional weights and biases, increasing the number of free parameters available for optimization during training. These parameters are adjusted in order to approximate a target mapping associated with a given task. In this context, the matrix representation of the neural network can be written in a compact form. Let $\mathbf{a}^{(0)} \equiv \mathbf{x}$ denote the input vector, and consider the $l$-th layer characterized by a weight matrix $\mathbf{W}^{(l)} \in \mathbb{R}^{n_l \times n_{l-1}}$, a bias vector $\mathbf{b}^{(l)} \in \mathbb{R}^{n_l}$, and an activation function $\sigma^{(l)}(\cdot)$. The forward propagation through the network is then given by
 \begin{equation}
@@ -115,8 +116,8 @@ where the activation function is applied element-wise. The output of the network
 Models of this type are referred to as \emph{feedforward} (or \emph{forward}) neural networks, since the output is obtained through a forward propagation of information from the input layer, across successive hidden layers, up to the final output layer. In particular, there exist multiple ways to connect the internal neurons within a neural network. The configuration presented in the Figure~\ref{fig:fully-connected-network} corresponds to the so-called \emph{fully connected} architecture, in which each perceptron in a given layer is connected to every perceptron in the preceding and subsequent layers.
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.9\linewidth]{images/fully-connected.pdf}
-    \caption[Deep feedforward neural network]{Schematic representation of a deep feedforward neural network.}
+    \includegraphics[width=0.9\linewidth]{images/tex-figures/fc-layer.pdf}
+    \caption[Fully-connected scheme]{Schematic representation of a deep feedforward neural network using a combination of fully-connected layers}
     \label{fig:fully-connected-network}
 \end{figure}
 
@@ -143,7 +144,7 @@ In practical applications, the input is usually a multidimensional array and the
 \begin{equation}
     S(i,j) = (I * K)(i,j) = \sum_{m,n} I(m,n)\,K(i - m, j - n),
 \end{equation}
-where $I$ denotes the input array, $K$ the kernel, and $(i,j)$ label spatial coordinates.
+where $I$ denotes the input array, $K$ the kernel, and $(i,j)$ label spatial coordinates.\footnote{Most deep learning frameworks, including the one used in this work, implement the closely related \emph{cross-correlation} operation $S(i,j)=\sum_{m,n} I(i+m,\,j+n)\,K(m,n)$, which coincides with the convolution up to a reflection of the kernel. Since the kernel entries are learned, this distinction does not affect the expressive power of the layer, and the term \emph{convolution} is retained by convention.}
 
 The forward propagation through a convolutional layer can therefore be expressed as
 \begin{equation}
@@ -156,19 +157,61 @@ where $\mathbf{K}^{(l)}$ denotes the convolutional kernel tensor, $\mathbf{b}^{(
 
 Beyond the kernel itself, the behavior of a convolutional layer is governed by several structural hyperparameters. The \emph{stride} controls the displacement of the kernel between successive applications, with larger strides reducing the spatial resolution of the resulting feature maps. The \emph{padding} operation extends the input domain, commonly by adding zeros, allowing control over output dimensions and mitigating boundary effects. The \emph{dilation} parameter introduces spacing between kernel elements, effectively increasing the receptive field without increasing the number of parameters. Finally, the \emph{groups} parameter partitions the input channels into independent subsets, enabling grouped or depth-wise convolutions and reducing computational complexity.
 
-Figure~\ref{fig:conv-connected-network} illustrates a comparison between fully connected layers and convolutional layers in terms of the number of internal connections, that is, the number of free parameters. By restricting each neuron to interact only with a local neighborhood of the input, convolutional layers drastically reduce the number of trainable parameters. As a consequence, the values of the weights are determined by local correlations in the data, leading to a significant reduction in computational cost while preserving the ability to extract relevant features.
+Figure~\ref{fig:conv-connected-network} illustrates how a convolutional layer transforms an input matrix into a feature map; its spatial size depends on the padding and stride, and is reduced in the example shown, where no padding is applied, although a suitable padding can also be used to preserve it. A natural comparison between fully connected and convolutional layers can be drawn in terms of the number of internal connections, i.e.\ the number of free parameters. By restricting each neuron to interact only with a local neighborhood of the input, convolutional layers drastically reduce the number of trainable parameters. Consequently, the weights are determined by local correlations in the data, yielding a significant reduction in computational cost while preserving the ability to extract relevant features. This same inductive bias is, however, also a limitation: if the relevant structure of the data is not governed by local (near-neighbor) correlations, a model relying solely on convolutional layers cannot be expected to generalize well.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.9\linewidth]{images/conv-connected.pdf}
-    \caption[Neural network made by CNN's and fully connected layers]{Schematic representation of a deep feedforward neural network combining convolutional and fully connected layers.}
+    \includegraphics[width=0.9\linewidth]{images/tex-figures/conv2d.pdf}
+    \caption[Two-dimensional convolution operation]{Schematic representation of a two-dimensional convolution. A $3\times3$ kernel is applied across the input array, and each output entry is obtained as the weighted sum of the corresponding local patch, producing a feature map of reduced spatial size.}
     \label{fig:conv-connected-network}
 \end{figure}
 
-% ============================================================
-\section{Activation functions}
-\label{sec:activation_functions}
+% =====================================================================
+\paragraph{Transposed convolutional layers}
+Convolutional layers, particularly when combined with strides or pooling operations, progressively reduce the spatial resolution of the feature maps. While this contraction is desirable for tasks such as classification, many problems require the opposite operation, namely recovering or increasing the spatial resolution of a representation. Representative examples include the decoder stage of autoencoders, generative models, semantic segmentation, and super-resolution. \emph{Transposed convolutional layers} (also called fractionally-strided convolutions) provide a learnable upsampling operation that fulfils this role.
 
+The name originates from the matrix formulation of the convolution. A discrete convolution can be expressed as a linear map $\mathbf{s} = \mathbf{C}\,\mathbf{x}$, where $\mathbf{x}$ and $\mathbf{s}$ are the flattened input and output, respectively, and $\mathbf{C}$ is a sparse matrix whose entries are determined by the kernel and whose structure encodes the locality and weight sharing of the operation. A transposed convolution applies the transpose of this operator, mapping a lower-dimensional representation back to a higher-dimensional one,
+\begin{equation}
+    \mathbf{x} \;\longmapsto\; \mathbf{C}\,\mathbf{x}
+    \quad (\text{convolution}),
+    \qquad
+    \mathbf{z} \;\longmapsto\; \mathbf{C}^{\top}\mathbf{z}
+    \quad (\text{transposed convolution}).
+\end{equation}
+
+Both operators are built from the same kernel parameters; the transposed convolution is therefore \emph{not} the inverse of the convolution, since it does not recover the original input, but rather its adjoint in terms of connectivity. This is precisely the operation that arises when backpropagating gradients through a convolutional layer: the gradient of the output with respect to the input of a convolution is obtained through a transposed convolution, and conversely.
+
+In practice, a transposed convolution with stride $s$ can be implemented as an ordinary, unit-stride convolution applied to a modified input. Two zero-insertion operations are involved. First, the input is \emph{dilated} by inserting $s-1$ zeros between consecutive elements along each spatial dimension, which encodes the upsampling factor. Second, a zero-valued \emph{border} of width $k - p - 1$ is added around the dilated map, where $k$ is the kernel size and $p$ the padding of the corresponding direct convolution. A standard convolution with unit stride is then applied to the resulting array. Figure~\ref{fig:transconv-connected-network} shows this procedure for a $3\times3$ input and a $3\times3$ kernel: the inserted and border zeros are made explicit, and the final stride-one convolution yields a $5\times5$ output. It is worth emphasizing that these zeros are not inert; during the convolution they merely deactivate selected terms of the weighted sum, so that different output positions combine different subsets of input values and kernel weights, producing a genuine upsampling rather than a trivial zero-filling.
+
+For a one-dimensional input of size $i$, kernel size $k$, stride $s$, and padding $p$, the spatial size of the transposed-convolution output is given by
+\begin{equation}
+    o = s\,(i-1) - 2p + k + a,
+    \label{eq:tconv-size}
+\end{equation}
+where $a$, with $0 \le a < s$, is an optional \emph{output padding} introduced to resolve the ambiguity that arises because several input sizes of a direct convolution may map to the same output size. In contrast to the direct convolution, whose output is generally smaller than its input, the transposed convolution typically produces a larger output, which is the desired upsampling behavior.
+
+Analogously to the convolutional case, the forward propagation through a transposed convolutional layer can be written as
+\begin{equation}
+    \mathbf{a}^{(l)} =
+    \sigma^{(l)}\!\left(
+    \mathbf{K}^{(l)} \,*^{\!\top}\, \mathbf{a}^{(l-1)} + \mathbf{b}^{(l)}
+    \right),
+\end{equation}
+where $*^{\top}$ denotes the transposed-convolution operator, $\mathbf{K}^{(l)}$ is the trainable kernel tensor, $\mathbf{b}^{(l)}$ the bias term, and $\sigma^{(l)}$ is applied element-wise. The structural hyperparameters (stride, padding, dilation, and groups) play roles analogous to those of the direct convolution, but now act to expand rather than contract the spatial dimensions.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\linewidth]{images/tex-figures/transconv2d.pdf}
+    \caption[Two-dimensional transposed convolution]{Schematic representation of a
+    two-dimensional transposed convolution implemented as a direct convolution.
+    The $3\times3$ input is dilated by inserting zeros (stride $2$), padded with a
+    zero border, and convolved with a $3\times3$ kernel using unit stride,
+    yielding a $5\times5$ output.}
+    \label{fig:transconv-connected-network}
+\end{figure}
+
+% ============================================================
+\paragraph{Activation functions}
 One of the key components of Artificial Neural Networks (ANNs) is the activation function. Its role is to introduce non-linearity into the model, allowing the network to represent complex relationships beyond linear mappings. In practice, the activation function determines how the weighted input of a neuron is transformed before being propagated to subsequent layers, effectively controlling whether and how a neuron contributes to the overall network output.
 
 Several activation functions have been proposed in the literature. Among the most commonly used ones is the hyperbolic tangent function ($\tanh$), which maps the input to a bounded interval $(-1,1)$ and is often preferred in physical and dynamical contexts due to its smoothness and symmetry around zero. Another widely used activation function is the sigmoid function, which produces outputs in the interval $(0,1)$ and has historically been employed in early neural network models, particularly in probabilistic interpretations. More recently, the Rectified Linear Unit (ReLU) has become popular due to its computational simplicity and its ability to alleviate vanishing gradient effects in deeper architectures.
@@ -177,9 +220,34 @@ The choice of activation function directly impacts the expressive power, numeric
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.9\linewidth]{images/activation-func.pdf}
+    \includegraphics[width=0.9\linewidth]{images/tex-figures/activation-functions.pdf}
     \caption[Activation functions]{Examples of commonly used activation functions, including $\tanh$, sigmoid, and ReLU.}
     \label{fig:activation}
+\end{figure}
+
+% =====================================================================
+\paragraph{Autoencoders}
+
+An autoencoder is a type of artificial neural network trained, in a self-supervised manner, to reproduce its own input at the output while passing the information through an internal representation of constrained capacity. Its purpose is therefore not to predict an external target but to learn a compact and informative encoding of the data: by forcing the signal through a bottleneck, the network is compelled to retain only the most salient structure of the input and to discard redundant or noisy components. Formally, an autoencoder is composed of two maps, an encoder $f_{\theta}$ and a decoder $g_{\phi}$, parameterized by trainable weights $\theta$ and $\phi$. The encoder transforms an input $\mathbf{x}\in\mathbb{R}^{d}$ into a latent code $\mathbf{z}=f_{\theta}(\mathbf{x})\in\mathbb{R}^{d'}$, usually of lower dimension $d'<d$, and the decoder maps this code back to the input space, producing a reconstruction $\hat{\mathbf{x}}=g_{\phi}(\mathbf{z})=g_{\phi}\!\left(f_{\theta}(\mathbf{x})\right)$.
+
+Structurally, an autoencoder is organized symmetrically around the latent space, as illustrated schematically in Figure~\ref{fig:autoencoder}. The encoder consists of a sequence of layers that progressively reduce the dimensionality of the representation until reaching the latent (or bottleneck) layer, which holds the compressed code, while the decoder mirrors this structure, progressively expanding the latent representation back to the original dimensionality. When the data possess spatial structure, such as images or discretized physical fields, these layers are typically convolutional: the encoder employs convolutional layers followed by non-linear activations to contract the spatial resolution while increasing the number of feature channels, whereas the decoder employs transposed convolutional layers and activations to recover the original spatial resolution from the latent code. This configuration is known as a convolutional autoencoder, and it is the one adopted in this work.
+
+The parameters of both maps are optimized jointly by minimizing a reconstruction loss that quantifies the discrepancy between the input and its reconstruction. For real-valued data a common choice is the mean squared error, so that the training objective takes the form
+\begin{equation}
+    \mathcal{L}(\theta,\phi) = \frac{1}{N}\sum_{n=1}^{N} \big\| \mathbf{x}_{n} - g_{\phi}\!\big(f_{\theta}(\mathbf{x}_{n})\big) \big\|^{2},
+    \label{eq:ae-loss}
+\end{equation}
+where $\{\mathbf{x}_{n}\}_{n=1}^{N}$ denotes the training set. This objective is minimized through the same gradient-based optimization and backpropagation procedures used for supervised networks (introduced in Sections~\ref{sec:loss_functions} and \ref{sec:optimization}), with the crucial difference that the targets are the inputs themselves. When the latent dimension is smaller than the input dimension (the so-called undercomplete regime), the bottleneck prevents the network from learning the trivial identity mapping and instead drives it to perform a non-linear dimensionality reduction. In fact, a linear autoencoder trained under the mean squared error recovers the same subspace as principal component analysis (PCA), so that autoencoders can be regarded as a non-linear generalization of classical linear dimensionality-reduction techniques. If, on the contrary, the latent space is overcomplete, with a dimension equal to or larger than that of the input, additional regularization must be imposed in order to obtain useful representations and to prevent the network from simply copying its input.
+
+Several variants extend this basic scheme by modifying the architecture or the training objective. Denoising autoencoders are trained to reconstruct a clean input from a corrupted version of it, which encourages robustness and the extraction of stable features. Sparse and contractive autoencoders introduce penalty terms that promote, respectively, sparse activations or representations that are locally invariant to small perturbations of the input. Variational autoencoders, in turn, reinterpret the latent space in probabilistic terms and impose a prior distribution on the code, turning the autoencoder into a generative model from which new samples can be drawn. Despite these differences, all of these models share the common encoder--bottleneck--decoder structure described above.
+
+Owing to their ability to learn compact representations without labeled data, autoencoders have found a wide range of applications. They are routinely used for dimensionality reduction and unsupervised representation learning, where the latent code serves as a low-dimensional feature vector for downstream tasks. Because the reconstruction error tends to be small for inputs similar to those seen during training and large for atypical ones, autoencoders are also effective for anomaly and novelty detection. The denoising variants are employed for data restoration and noise removal, while the generative variants are used for data synthesis and for modeling complex data distributions. In scientific and engineering contexts they are increasingly applied to compress high-dimensional physical fields, to construct reduced-order models of dynamical systems, and to learn informative representations of complex states, which makes them a natural tool within the data-driven modeling of physical and quantum systems considered in this work.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\linewidth]{images/tex-figures/autoencoder.pdf}
+    \caption[Convolutional autoencoder architecture]{Schematic representation of a convolutional autoencoder. The encoder applies convolutional layers and activations to compress the input into a low-dimensional latent representation, while the decoder applies transposed convolutional layers and activations to reconstruct the input from that latent code.}
+    \label{fig:autoencoder}
 \end{figure}
 
 \section{Loss functions and training objective} 
@@ -193,7 +261,7 @@ More precisely, the training process relies on the definition of a scalar functi
     \mathcal{L} = \sum_i \qty( y_i - d_i )^2 .
 \end{equation}
 
-This quantity is commonly referred to as the \emph{loss function} or \emph{cost function}. When the internal parameters of the model are appropriately chosen, the value of $\mathcal{L}$ approaches zero, indicating that the model successfully reproduces the target data $\mathbf{d}$ and, consequently, performs the desired task.
+This quantity is commonly referred to as the \emph{loss function} or \emph{cost function}. Here the index $i$ runs over the components of the output vector for a single input sample; when a full dataset is considered, the total objective is obtained by averaging this per-sample loss over all training examples, as in the linear-regression example above. When the internal parameters of the model are appropriately chosen, the value of $\mathcal{L}$ approaches zero, indicating that the model successfully reproduces the target data $\mathbf{d}$ and, consequently, performs the desired task.
 
 For illustrative purposes, consider a model composed of a single fully connected layer. In this case, the trainable parameters correspond to the weights and biases of the perceptrons. For an input vector $\mathbf{x} = (x_1,\dots,x_n)$, the pre-activation variable associated with the $i$-th neuron is given by
 \begin{equation}
@@ -230,11 +298,11 @@ For a fully connected neural network composed of $L$ layers, the forward propaga
     \pdv{\mathbf{a}^{(k)}}{\mathbf{a}^{(k-1)}}
     \pdv{\mathbf{a}^{(l)}}{\mathbf{W}^{(l)}} ,
 \end{equation}
-where the explicit structure of each term depends on the network architecture, including the number of layers, the number of neurons per layer, and the choice of activation functions.
+where the explicit structure of each term depends on the network architecture, including the number of layers, the number of neurons per layer, and the choice of activation functions. This expression should be understood schematically: each factor $\partial \mathbf{a}^{(k)}/\partial \mathbf{a}^{(k-1)}$ is a Jacobian matrix, and the product must be evaluated in the appropriate order, from the output layer $L$ down to layer $l$.
 
 Therefore, in practical scenarios, the explicit analytical form of the gradients is not written out in full. Instead, gradient-based optimization relies on algorithmic implementations of backpropagation, which efficiently evaluate these derivatives without requiring their explicit expansion.
 
-It is worth noting that the explicit form of the gradients differs when the network architecture incorporates convolutional layers instead of fully connected ones. In this case, the trainable parameters correspond to convolutional kernels rather than individual weights, and the training objective remains unchanged: to determine how variations in these parameters affect the network output and the value of the loss function. As a consequence of the convolutional structure, the resulting gradients reflect aggregated contributions over the corresponding receptive fields, rather than local derivatives associated with single connections. As in the fully connected case, the explicit analytical expression of these gradients is not of primary relevance at this level of description, since their evaluation is handled by backpropagation algorithms implemented within modern deep learning frameworks. Nevertheless, understanding the general mechanism by which such gradients are computed and propagated remains important for the correct interpretation, design, and application of convolutional architectures.
+It is worth noting that the explicit form of the gradients differs when the architecture incorporates convolutional layers instead of fully connected ones. In this case the trainable parameters are convolutional kernels rather than individual weights, and the resulting gradients reflect aggregated contributions over the corresponding receptive fields rather than local derivatives associated with single connections. The training objective, however, remains unchanged, and as before the explicit gradients are evaluated automatically by backpropagation. Understanding the general mechanism by which they are computed and propagated nonetheless remains important for the correct design and interpretation of convolutional architectures.
 
 \paragraph{Examples of common loss functions}
 While the squared loss introduced in Eq.~\eqref{eq:loss-example} provides a simple and illustrative example, different tasks often require alternative choices of loss functions. The selection of an appropriate loss function reflects both the nature of the data and the objective of the learning problem, and may significantly influence the training dynamics and the resulting model performance.
@@ -259,11 +327,11 @@ where $\boldsymbol{\theta}$ denotes the collection of all trainable parameters o
 \begin{equation}
     \theta_k^{(t+1)} = \theta_k^{(t)} - \eta \, \pdv{\mathcal{L}}{\theta_k}\Bigg|_{\boldsymbol{\theta} = \boldsymbol{\theta}_t}.
 \end{equation}
-Here, $\eta > 0$ is the \emph{learning rate}, a hyperparameter that controls the magnitude of the parameter updates. The learning rate plays a central role in the training dynamics: values that are too large may lead to unstable optimization, while excessively small values can result in slow convergence or stagnation.
+Here, $\eta > 0$ is the \emph{learning rate}, a hyperparameter that controls the magnitude of the parameter updates. The learning rate plays a central role in the training dynamics: values that are too large may lead to unstable optimization, while excessively small values can result in slow convergence or stagnation. In Stochastic Gradient Descent, the gradient $\nabla_{\boldsymbol{\theta}}\mathcal{L}$ is not evaluated over the full dataset but estimated from a randomly sampled subset (a \emph{mini-batch}) of the training data at each iteration. This reduces the computational cost per update and introduces a stochastic component that can help the optimizer escape shallow local minima.
 
 In practical implementations, the learning rate is often adjusted during training through the use of \emph{learning rate schedulers}, which progressively reduce its value as the optimization proceeds. This strategy allows for larger exploratory steps during the early stages of training, followed by finer adjustments as the loss function approaches a minimum.
 
-Despite the effectiveness of gradient-based methods, the optimization landscape of deep neural networks is typically highly non-convex and may exhibit flat regions or multiple local minima. A well-known challenge in this context is the presence of \emph{barren plateaus}, where the gradients become extremely small, hindering efficient training. Various techniques have been proposed to mitigate these issues, including the introduction of momentum terms, adaptive learning rate methods, and carefully designed initialization strategies. Such approaches aim to improve convergence by enabling the optimizer to escape shallow local minima or flat regions of the loss landscape.
+Despite the effectiveness of gradient-based methods, the optimization landscape of deep neural networks is typically highly non-convex and may exhibit flat regions or multiple local minima. A well-known challenge in this context is the appearance of \emph{vanishing gradients}, together with extended flat regions and saddle points of the loss landscape, where the gradients become extremely small and hinder efficient training.\footnote{A closely related phenomenon, known as the \emph{barren plateau}, arises in variational quantum circuits, where the gradients vanish exponentially with the number of qubits. The term is specific to that quantum-computing setting and is therefore avoided here in the classical context.} Various techniques have been proposed to mitigate these issues, including the introduction of momentum terms, adaptive learning rate methods, and carefully designed initialization strategies. Such approaches aim to improve convergence by enabling the optimizer to escape shallow local minima or flat regions of the loss landscape.
 
 % ============================================================
 \section{Physics-Informed Neural Networks}
@@ -503,7 +571,7 @@ These examples illustrate how physics-informed neural networks provide a unified
 
 In this chapter, we have introduced the fundamental concepts required to understand and implement deep learning models within a rigorous mathematical framework. Beginning with the general formulation of learning problems in terms of tasks, experience, and performance measures, we established the conceptual foundations of machine learning and its specialization into deep learning architectures.
 
-We reviewed the structure of artificial neural networks, including fully connected and convolutional layers, and discussed the role of activation functions in enabling nonlinear representation learning. The training process was formulated as a high-dimensional optimization problem, where backpropagation and gradient-based methods allow efficient parameter updates. Particular emphasis was placed on the interpretation of loss functions, since they define the objective that guides the learning dynamics.
+We reviewed the structure of artificial neural networks, including fully connected, convolutional, and transposed convolutional layers, and discussed the role of activation functions in enabling nonlinear representation learning. We also introduced autoencoders as a representative unsupervised architecture, built from these layers around a compressed latent representation. The training process was formulated as a high-dimensional optimization problem, where backpropagation and gradient-based methods allow efficient parameter updates. Particular emphasis was placed on the interpretation of loss functions, since they define the objective that guides the learning dynamics.
 
 The chapter culminated with the introduction of Physics-Informed Neural Networks, which extend conventional data-driven models by incorporating physical constraints directly into the training objective. By embedding differential equations, boundary conditions, and structural properties into the loss function, PINNs restrict the hypothesis space to physically admissible solutions. This approach enables accurate modeling of complex dynamical systems while reducing the dependence on large datasets.
 

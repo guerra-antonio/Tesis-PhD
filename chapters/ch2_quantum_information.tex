@@ -108,7 +108,7 @@ The purity of a quantum state described by a density operator $\rho$ is defined 
 \begin{equation}
     \gamma(\rho) = \Tr(\rho^2).
 \end{equation}
-This quantity satisfies $0 < \gamma(\rho) \leq 1$, with $\gamma(\rho) = 1$ corresponding to pure states and smaller values indicating increasing degrees of mixedness. In particular, if $\gamma(\rho) < 1$, the density operator cannot be written in the form $\rho = \ket{\psi}\bra{\psi}$ for some state vector $\ket{\psi}$.
+This quantity satisfies $\frac{1}{d} \le \gamma(\rho) \leq 1$ for a $d$-dimensional system, with $\gamma(\rho) = 1$ corresponding to pure states and the lower bound $\gamma(\rho)=1/d$ attained by the maximally mixed state $\rho = \id/d$; smaller values indicate increasing degrees of mixedness. In particular, if $\gamma(\rho) < 1$, the density operator cannot be written in the form $\rho = \ket{\psi}\bra{\psi}$ for some state vector $\ket{\psi}$.
 
 \paragraph{Ensemble representations.}
 While any density operator can be written as a convex combination of pure states, such a decomposition is not unique. In contrast, the spectral decomposition of $\rho$ is unique up to degeneracies in the eigenvalue spectrum. This distinction plays an important role in the interpretation of mixed states and in practical quantum state reconstruction tasks.
@@ -134,6 +134,7 @@ This expression recovers the standard form of the Born rule for pure states, as 
 
 % ============================================================
 \section{Composite systems and Partial trace}
+\label{sec:composite_systems}
 
 \textit{Postulate~4} defines how to construct joint states for composite systems from the Hilbert spaces of their subsystems. However, in many situations one is interested in describing only a subsystem of a larger quantum system. In such cases, the reduced density operator provides a systematic way to obtain the state of a subsystem from the density operator of the composite system.
 
@@ -185,8 +186,9 @@ The quantum marginal problem highlights fundamental limitations in the reconstru
 
 % ============================================================
 \section{Quantum dynamics of density matrices}
+\label{sec:quantum-dynamics}
 
-\paragraph{Master equation.}
+\paragraph{Equation of motion for the density operator.}
 \textit{Postulate~2} establishes the time evolution of quantum states by relating the state of a system at different times.
 In quantum mechanics, however, several equivalent formulations---known as \textit{pictures}---exist, which differ in how the time dependence is distributed between states and observables.
 The two most commonly used formulations are the \textit{Schrödinger picture} and the \textit{Heisenberg picture}.
@@ -228,9 +230,9 @@ Differentiating this expression with respect to time, using Eq.~\eqref{eq:U_evol
      & = \dv{t} U(t,t_0) \,\rho_0\,U^{\dagger}(t,t_0)
     + U(t,t_0)\,\rho_0\,\dv{t} U^{\dagger}(t,t_0) \nonumber \\
      & = -i H(t)\rho(t) + i \rho(t)H(t) \nonumber           \\
-     & = -i\,[H(t),\rho(t)],
+     & = -i\,[H(t),\rho(t)], \label{eq:von_neumann}
 \end{align}
-where $\comm{\cdot}{\cdot}$ denotes the commutator between two operators.
+where $[\cdot,\cdot]$ denotes the commutator between two operators.
 
 This equation is known as the \textit{von Neumann equation}, and governs the unitary dynamics of closed quantum systems in the Schrödinger picture. A detailed discussion can be found in Ref.~\cite{BreuerPetruccione2006}.
 
@@ -251,6 +253,7 @@ For the case of a time-independent Hamiltonian $H$, the solution of Eq.~\eqref{e
 In contrast, when the Hamiltonian depends explicitly on time, $H(t)$, the time-evolution operator is formally given by
 \begin{equation}
     U(t,t_0) = \mathcal{T} \exp\!\left[-i \int_{t_0}^{t} \mathrm{d}\tau \, H(\tau)\right],
+    \label{eq:time_ordered_exponential}
 \end{equation}
 where $\mathcal{T}$ denotes the time-ordering operator, which arranges products of operators such that terms evaluated at later times appear to the left.
 The presence of this operator is essential because, in general, a time-dependent Hamiltonian does not commute with itself at different times, i.e.,
@@ -267,6 +270,7 @@ Equation~\eqref{eq:U_evolution} can be rewritten as the integral equation
 
 A formal solution is obtained by iteratively substituting the operator $U(\tau,t_0)$ inside the integral. This procedure generates a perturbative expansion given by
 \begin{align}
+    \label{eq:dyson_series}
     U(t,t_0) = & \, \id
     - i \int_{t_0}^{t} \mathrm{d}\tau\, H(\tau)
     + (-i)^2 \int_{t_0}^{t} \mathrm{d}\tau \int_{t_0}^{\tau} \mathrm{d}\tau'\, H(\tau) H(\tau') \nonumber \\
@@ -285,6 +289,7 @@ Second, the explicit evaluation of the nested time-ordered integrals becomes com
 Alternatively, the solution of Eq.~\eqref{eq:U_evolution} can be expressed using the Magnus expansion, which provides a representation of the time-evolution operator in exponential form,
 \begin{equation}
     U(t,t_0) = \exp\!\big[\Omega(t,t_0)\big],
+    \label{eq:magnus}
 \end{equation}
 where the operator $\Omega(t,t_0)$ is given as an infinite series,
 \begin{equation}
@@ -349,6 +354,7 @@ By composing the evolution over all time steps, the full time-evolution operator
     \left[
         \prod_{k} \exp\!\left(-i H_k(t_n)\, \Delta t\right)
         \right],
+    \label{eq:trotter}
 \end{equation}
 where the product over $n$ is time-ordered, with earlier times appearing to the right. In the limit $\Delta t \to 0$ (or equivalently $N \to \infty$), this construction converges to the exact time-evolution operator.
 
@@ -358,9 +364,10 @@ As in the Magnus expansion, the Trotter formula guarantees unitarity. However, i
 
 % ============================================================
 \section{Pauli basis and operator representations}
+\label{sec:pauli_basis}
 Throughout this work, the physical systems of interest are two-level quantum systems, or composite systems formed by subsystems with two accessible energy levels. The quantum states considered therefore describe such systems, commonly referred to as \textit{qubits}. Although quantum information theory is not restricted to two-level systems and can be naturally extended to $n$-level systems, known as \textit{qudits}, the focus of this work is exclusively on qubit-based systems.
 
-The dynamics and structure of qubits are conveniently described within a mathematical framework associated with the Lie group $\mathfrak{su}(2)$, which captures the symmetry properties of isolated two-level quantum systems. Within this framework, a set of four operators plays a central role: the identity operator and the three Pauli matrices. Together, these operators form a complete basis for the vector space of linear operators acting on a single-qubit Hilbert space. As a result, any single-qubit density operator, Hamiltonian, or unitary evolution operator can be expressed as a linear combination of these matrices. In what follows, this operator basis will be referred to as the \textit{Pauli basis}, defined by
+The dynamics and structure of qubits are conveniently described within a mathematical framework associated with the special unitary group $SU(2)$ and its Lie algebra $\mathfrak{su}(2)$, which captures the symmetry properties of isolated two-level quantum systems. Within this framework, a set of four operators plays a central role: the identity operator and the three Pauli matrices. Together, these operators form a complete basis for the vector space of linear operators acting on a single-qubit Hilbert space. As a result, any single-qubit density operator, Hamiltonian, or unitary evolution operator can be expressed as a linear combination of these matrices. In what follows, this operator basis will be referred to as the \textit{Pauli basis}, defined by
 \begin{align}
     \sigma_0 & \equiv
     \begin{bmatrix}
@@ -396,11 +403,11 @@ These matrices satisfy several important algebraic relations,
 where $\delta_{ij}$ denotes the Kronecker delta, $\{\cdot,\cdot\}$ denotes the anticommutator and $i,j,k \in \{1,2,3\}$.
 
 \paragraph{Pauli vectors.}
-It is useful to introduce a correspondence between vectors in $\mathbb{R}^3$ and the space of traceless Hermitian $2 \times 2$ matrices. This correspondence is naturally established through the Pauli matrices, which form a basis for the Lie algebra $\mathfrak{su}(2)$. Within this framework, any single-qubit density matrix can be parametrized in terms of a real three-dimensional vector, known as the Bloch vector.
+It is useful to introduce a correspondence between vectors in $\mathbb{R}^3$ and the space of traceless Hermitian $2 \times 2$ matrices. This correspondence is naturally established through the Pauli matrices, which span the traceless Hermitian $2\times 2$ matrices, i.e.\ the generators of $SU(2)$ (the elements of $\mathfrak{su}(2)$ up to a factor of $i$). Within this framework, any single-qubit density matrix can be parametrized in terms of a real three-dimensional vector, known as the Bloch vector.
 
 Explicitly, a one-qubit density operator can be written as
 \begin{equation}
-    \rho = \frac{1}{2}\,\id + \va{r} \vdot \vb*{\sigma},
+    \rho = \frac{1}{2}\qty(\id + \va{r} \vdot \vb*{\sigma}),
 \end{equation}
 where $\va{r} \in \mathbb{R}^3$ is the Bloch vector and $\vb*{\sigma}$ denotes the Pauli vector. The Pauli vector is defined as the operator-valued vector
 \begin{equation}
@@ -410,7 +417,7 @@ with $\vu{x}_1$, $\vu{x}_2$, and $\vu{x}_3$ being the canonical unit vectors of 
 
 The components of the Bloch vector are given by the expectation values of the Pauli operators,
 \begin{equation}
-    r_i = \frac{1}{2}\,\mathrm{Tr}(\rho\, \sigma_i), \qquad i \in \{1,2,3\},
+    r_i = \mathrm{Tr}(\rho\, \sigma_i), \qquad i \in \{1,2,3\},
 \end{equation}
 which ensures that $\va{r}$ is real-valued due to the Hermiticity of $\rho$ and the Pauli matrices. The positivity and unit-trace conditions imposed on density operators restrict the norm of the Bloch vector to satisfy
 \begin{equation}
@@ -521,6 +528,7 @@ This representation provides a unified and scalable framework for describing the
 
 % ============================================================
 \section{Fidelity}
+\label{sec:fidelity}
 
 \paragraph{Fidelity between density matrices.}
 To quantitatively assess the similarity between quantum states and quantum operations, it is necessary to introduce appropriate fidelity measures. These quantities play a central role in the validation of quantum dynamics, the characterization of control protocols, and the evaluation of machine-learning-based models for quantum systems.
@@ -602,22 +610,21 @@ Since the Choi--Jamiołkowski isomorphism maps quantum operations to density mat
     J_V & = (\mathcal{V} \otimes \id)\qty(\ket{\Phi}\bra{\Phi}).
 \end{align}
 
-Unitary channels correspond to pure Choi states, which can be written as $J_U = \ket{J_U}\bra{J_U}$ and $J_V = \ket{J_V}\bra{J_V}$. In this case, the fidelity reduces to the absolute value of the overlap,
+Unitary channels correspond to pure Choi states, which can be written as $J_U = \ket{J_U}\bra{J_U}$ and $J_V = \ket{J_V}\bra{J_V}$. For the comparison of unitary channels we adopt the \emph{gate fidelity}, defined as the squared overlap of their Choi states---equivalently, the square of the state fidelity of Eq.~\eqref{eq:fidelity} evaluated on these pure states,
 \begin{equation}
-    F(J_U, J_V) = \qty| \braket{J_U}{J_V} |.
+    F(J_U, J_V) = \qty| \braket{J_U}{J_V} |^2 .
 \end{equation}
 Using Eq.~\eqref{eq:choi}, this expression becomes
 \begin{equation}
     \label{eq:gate_fidelity}
     F(J_U, J_V)
     =
-    \qty| \bra{\Phi} (\id \otimes U^\dagger V) \ket{\Phi} |
+    \qty| \bra{\Phi} (\id \otimes U^\dagger V) \ket{\Phi} |^2
     =
-    \frac{1}{d}
-    \qty| \Tr(U^\dagger V) |.
+    \qty| \frac{1}{d}\, \Tr(U^\dagger V) |^2 .
 \end{equation}
 
-This quantity is commonly referred to as the \emph{gate fidelity}. In particular, if $U = V$, then $\Tr(U^\dagger V) = d$, yielding $F(J_U, J_V) = 1$, which corresponds to maximal fidelity. The fidelity between Choi matrices therefore provides a consistent and operationally meaningful measure for comparing unitary quantum operations.
+This quantity, which corresponds to the transition probability between the pure Choi states associated with $U$ and $V$, is commonly referred to as the \emph{gate fidelity}. In particular, if $U = V$, then $\Tr(U^\dagger V) = d$, yielding $F(J_U, J_V) = 1$, which corresponds to maximal fidelity. The fidelity between Choi matrices therefore provides a consistent and operationally meaningful measure for comparing unitary quantum operations.
 
 % ============================================================
 \section{Summary}

@@ -14,7 +14,7 @@ In physics, mathematical objects are assigned physical meaning in order to descr
 
 This construction can be naturally generalized to $n$ dimensions, leading to the vector space $\mathbb{R}^n$, whose elements are vectors composed of $n$ real components. More generally, the components of vectors need not be restricted to real numbers, but may belong to a more general set of scalars known as a \emph{field}, most commonly $\mathbb{R}$ or $\mathbb{C}$. By varying both the dimensionality of the vectors and the underlying field, a broad class of vector spaces can be constructed.
 
-To provide a precise mathematical definition, it is necessary to specify not only the elements of the space, but also the operations that can be performed on them. A vector space $\mathcal{V}$ over a field $\mathbb{F}$ is therefore defined as a set equipped with vector addition and scalar multiplication satisfying the axioms of linearity, such as those presented in Ref.~\cite{Devaud2001}. Throughout this work, both real and complex vector spaces are employed, with complex vector spaces playing a central role in the formulation of quantum mechanics.
+To provide a precise mathematical definition, it is necessary to specify not only the elements of the space, but also the operations that can be performed on them. A vector space $\mathcal{V}$ over a field $\mathbb{F}$ is therefore defined as a set equipped with vector addition and scalar multiplication satisfying the vector-space axioms, such as those presented in Ref.~\cite{Devaud2001}. Throughout this work, both real and complex vector spaces are employed, with complex vector spaces playing a central role in the formulation of quantum mechanics.
 
 In order to introduce geometric notions such as lengths, angles, and orthogonality, vector spaces are often endowed with an additional structure known as an inner product. An inner product on $\mathcal{V}$ is a map
 \begin{equation}
@@ -32,19 +32,20 @@ and satisfies the following properties for all $\mathbf{u}, \mathbf{v}, \mathbf{
     \item \textbf{Conjugate symmetry:} $\langle \mathbf{u}, \mathbf{v} \rangle = \langle \mathbf{v}, \mathbf{u} \rangle^{*}$.
     \item \textbf{Positive definiteness:} $\langle \mathbf{v}, \mathbf{v} \rangle \geq 0$, with equality if and only if $\mathbf{v} = \mathbf{0}$.
 \end{itemize}
+Note that conjugate symmetry implies that $\langle \mathbf{v}, \mathbf{v} \rangle$ is real for every $\mathbf{v}$, so that the positive-definiteness condition is well defined.
 
 The inner product induces a norm,
 \begin{equation}
     \|\mathbf{v}\| = \sqrt{\langle \mathbf{v}, \mathbf{v} \rangle},
 \end{equation}
-which provides a natural notion of length and distance between vectors and forms the basis for the geometric and analytical structures employed in the following chapters. This norm satisfies:
+which provides a natural notion of length and distance between vectors and forms the basis for the geometric and analytical structures employed in the following chapters. More generally, a norm on $\mathcal{V}$ is any map $\|\cdot\| : \mathcal{V} \to \mathbb{R}$ satisfying:
 
 \begin{enumerate}
+    \item \textbf{Definiteness:} $\|\mathbf{v}\| \ge 0$, with equality if and only if $\mathbf{v} = \mathbf{0}$.
     \item \textbf{Homogeneity:} $\|\alpha \mathbf{v}\| = |\alpha| \|\mathbf{v}\|$.
     \item \textbf{Triangle inequality:} $\|\mathbf{v} + \mathbf{w}\| \le \|\mathbf{v}\| + \|\mathbf{w}\|$.
 \end{enumerate}
-
-In finite-dimensional spaces, the most commonly used norms are the $p$-norms. For a vector $\mathbf{v} \in \mathbb{F}^n$, the $p$-norm is defined as
+The norm induced by the inner product corresponds to one particular choice; not every norm arises from an inner product. In finite-dimensional spaces, the most commonly used norms are the $p$-norms. For a vector $\mathbf{v} \in \mathbb{F}^n$, the $p$-norm is defined as
 \begin{equation}
     \|\mathbf{v}\|_p = \left( \sum_{i=1}^{n} |v_i|^p \right)^{1/p}, 
     \qquad 1 \le p < \infty,
@@ -54,7 +55,7 @@ and
     \|\mathbf{v}\|_\infty = \max_{1 \le i \le n} |v_i|.
 \end{equation}
 
-A particularly important case is the Euclidean norm ($p=2$), which is induced by the inner product and possesses a clear geometric interpretation in terms of lengths and angles.
+A particularly important case is the Euclidean norm ($p=2$), which is the one induced by the inner product and possesses a clear geometric interpretation in terms of lengths and angles.
 
 \paragraph{Distances}
 
@@ -125,7 +126,7 @@ Within Dirac's notation, vectors in $\mathcal{V}$ are denoted by \emph{kets} $\k
 \end{equation}
 which is linear in its second argument and conjugate linear in its first, in accordance with the conventions adopted in quantum mechanics.
 
-A complex vector space equipped with an inner product and complete with respect to the norm induced by that inner product, that is, such that every Cauchy sequence converges to an element of the space, is called a \emph{Hilbert space}. In this work, all Hilbert spaces are assumed to be finite-dimensional. As a consequence, completeness is automatically guaranteed, and no technical distinction between inner-product spaces and Hilbert spaces is required.
+A complex vector space equipped with an inner product and complete with respect to the norm induced by that inner product, that is, such that every Cauchy sequence converges to an element of the space, is called a \emph{Hilbert space}. In this work, all Hilbert spaces are assumed to be finite-dimensional, so that completeness is automatically guaranteed and no technical distinction between inner-product spaces and Hilbert spaces is required.
 
 The Hilbert space formalism provides the natural mathematical setting for the description of quantum states and linear operators. At the same time, its finite-dimensional structure enables a direct correspondence with matrix representations and numerical implementations, which is essential for the learning-based approaches developed in the subsequent chapters.
 
@@ -207,7 +208,7 @@ Although writing an exponential with a matrix in the exponent may initially appe
     e^A = \sum_{n=0}^{\infty} \frac{A^n}{n!},
 \end{equation}
 
-where $A^0 = \mathbb{I}$ and $A^n$ denotes the $n$-th matrix power. Since the series converges absolutely for all finite matrices, the matrix exponential is well defined for any finite-dimensional linear operator.
+where $A^0 = \id$ and $A^n$ denotes the $n$-th matrix power. Since the series converges absolutely for all finite matrices, the matrix exponential is well defined for any finite-dimensional linear operator.
 
 \paragraph{Spectral representation}
 If $A$ is diagonalizable, the computation of matrix functions becomes particularly simple. Suppose
@@ -239,14 +240,14 @@ Using the spectral representation,
 
 Since $|e^{-i\lambda_i}| = 1$ for real $\lambda_i$, we immediately see that
 \begin{equation}
-    U^\dagger U = \mathbb{I},
+    U^\dagger U = \id,
 \end{equation}
 which means that $U$ is unitary. More generally, for any matrix $A$,
 \begin{equation}
     \left(e^A\right)^\dagger = e^{A^\dagger}.
 \end{equation}
 
-Therefore, if $A$ is Hermitian, $e^{iA}$ is unitary.
+Therefore, if $A$ is Hermitian, $e^{-iA}$ is unitary.
 
 \paragraph{Connection with dynamical evolution}
 The matrix exponential plays a fundamental role in the description of continuous dynamical processes generated by linear operators. Whenever the evolution of a system is governed by a linear generator $A$, the associated evolution operator can often be written in the form
@@ -338,7 +339,7 @@ The tensor product is therefore the fundamental algebraic mechanism that allows 
 \section{Differentiation with respect to vectors and matrices}
 \label{sec:differentiation}
 
-A central task in Machine Learning and Deep Learning consists of optimizing a large number of parameters in order to construct models capable of approximating complex mappings. This optimization process requires evaluating and differentiating functions whose arguments are vectors or matrices. Since the models employed throughout this thesis are formulated in finite-dimensional spaces, we restrict our discussion to this setting.
+A central task in Machine Learning and Deep Learning consists of optimizing a large number of parameters in order to construct models capable of approximating complex mappings. This optimization process requires evaluating and differentiating functions whose arguments are vectors or matrices.
 
 \paragraph{Derivatives with respect to vectors}
 Let $f : \mathbb{F}^n \to \mathbb{F}$ be a scalar-valued function of a vector 
@@ -392,7 +393,9 @@ Similarly, for a quadratic form of the type $\mathrm{Tr}(X^\top A X)$, one obtai
 \begin{equation}
     \frac{\partial}{\partial X} \mathrm{Tr}(X^\top A X) 
     = 
-    A X + A^\top X.
+    A X + A^\top X
+    =
+    (A + A^\top)\,X.
 \end{equation}
 These identities appear repeatedly in optimization problems involving least-squares objectives and operator learning.
 

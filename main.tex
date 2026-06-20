@@ -1,88 +1,107 @@
-\documentclass[12pt,oneside]{report}
+%===========================================================
+% Doctoral Thesis — Universidad de Concepción
+% Formato según la "Pauta de entrega y guía para estructura
+% de tesis" (Bibliotecas UdeC, 2019).
+%===========================================================
+\documentclass[14pt,oneside]{extreport}   % Times New Roman 14 pt (reglamento 3.4)
 
 %-----------------------------------------------------------
-% Packages
+% Página: márgenes izq./sup. 4 cm, der./inf. 2.5 cm (3.2)
 %-----------------------------------------------------------
-\usepackage[a4paper,margin=3cm]{geometry}
-\usepackage{setspace}
+\usepackage[a4paper,top=4cm,left=4cm,right=2.5cm,bottom=2.5cm]{geometry}
+
+%-----------------------------------------------------------
+% Tipografía: Times New Roman (3.4)
+%-----------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
 \usepackage{amsmath,amssymb,amsfonts}
+\usepackage{mathptmx}          % Times New Roman (texto y matemáticas)
+
+%-----------------------------------------------------------
+% Paquetes de contenido
+%-----------------------------------------------------------
 \usepackage{physics}
 \usepackage{bm}
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{subcaption}
-\usepackage{hyperref}
-\usepackage{cite}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage{placeins}
-
-\onehalfspacing
+\usepackage{setspace}
+\usepackage{etoolbox}
+\usepackage{cite}
+\usepackage[hidelinks]{hyperref}
 
 %-----------------------------------------------------------
-% Chapter style (chapter "cover" look)
+% Interlineado doble (3.3); excepciones a espacio simple:
+% notas, leyendas de figuras/tablas, índices y bibliografía.
+%-----------------------------------------------------------
+\doublespacing
+\captionsetup{font={small,stretch=1.0}}                 % leyendas a espacio simple (3.3.e)
+\AtBeginEnvironment{thebibliography}{\singlespacing}     % bibliografía a espacio simple (3.3.b)
+
+%-----------------------------------------------------------
+% Encabezados de capítulo: centrados, MAYÚSCULA y negrita (3.6.b)
 %-----------------------------------------------------------
 \titleformat{\chapter}[display]
-  {\normalfont\bfseries\Huge}
-  {\filcenter\chaptername\ \thechapter}
-  {1.5ex}
-  {\filcenter}
-  [\vspace{1ex}\rule{\textwidth}{0.4pt}]
-
-\titlespacing*{\chapter}
-  {0pt}   % left
-  {0pt}   % before
-  {40pt}  % after
+  {\normalfont\centering\bfseries}
+  {\large\chaptername\ \thechapter}
+  {1ex}
+  {\Large\MakeUppercase}
+  [\vspace{1ex}\titlerule]
+\titlespacing*{\chapter}{0pt}{0pt}{36pt}                 % título arriba; texto ~3 espacios bajo el título (3.6.c)
 
 %-----------------------------------------------------------
-% Custom commands
+% Comandos personalizados
 %-----------------------------------------------------------
 \newcommand{\id}{\mathbb{I}}
 \newcommand{\Hil}{\mathcal{H}}
 
-%-----------------------------------------------------------
-% Document
-%-----------------------------------------------------------
+%===========================================================
 \begin{document}
 
-%==================== Front matter =========================
-
-\input{chapters/titlepage}
-
+%==================== Páginas preliminares =================
+% Numeración romana en minúscula; la portada se considera (i)
+% pero no se imprime su número (3.5.a).
 \pagenumbering{roman}
 
-\input{chapters/abstract}
-\input{chapters/acknowledgements}
+\input{chapters/titlepage}        % Portada (i, sin número impreso)
+\input{chapters/copyright}        % Página de derecho de autor (2.1.2)
+\input{chapters/acknowledgements} % Agradecimientos (2.1.4)
 
-\tableofcontents
-\listoffigures
-\listoftables
+% Índices a espacio simple (3.3.c)
+\begin{singlespace}
+\tableofcontents                  % Tabla de contenido (2.1.5)
+\listoftables                     % Índice de tablas (2.1.6)
+\listoffigures                    % Índice de ilustraciones (2.1.7)
+\end{singlespace}
 
-\clearpage
+\begin{singlespace}
+\input{chapters/resumen}          % Resumen en español (2.1.8)
+\input{chapters/abstract}         % Abstract en inglés (página siguiente al resumen)
+\end{singlespace}
+%==================== Cuerpo de la tesis ===================
+% Numeración árabe desde la introducción (3.5.b)
+\cleardoublepage
 \pagenumbering{arabic}
 
-%==================== Chapters ==============================
-
 \input{chapters/ch0_introduction}
-\input{chapters/ch1_linear_algebra.tex}
+\input{chapters/ch1_linear_algebra}
 \input{chapters/ch2_quantum_information}
 \input{chapters/ch3_deep_learning}
 \input{chapters/ch4_results_interpolation}
 \input{chapters/ch5_results_qmp}
 \input{chapters/ch6_conclusions}
 
-%==================== Appendices ============================
-
+%==================== Apéndices ============================
 % \appendix
-
 % \input{appendices/appA_math_derivations}
-% \input{appendices/appB_nn_architectures}
-% \input{appendices/appC_additional_results}
 
-%==================== Bibliography ==========================
-
+%==================== Bibliografía =========================
 \bibliographystyle{unsrt}
 \bibliography{references}
 

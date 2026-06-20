@@ -1,0 +1,10 @@
+\chapter*{Summary}
+\addcontentsline{toc}{chapter}{Resumen}
+
+This thesis develops two deep-learning frameworks to address quantum-information problems whose complexity grows exponentially with system size. In both cases, known physical constraints are incorporated directly into the loss function, ensuring that the learned solutions remain consistent with the principles of quantum mechanics.
+
+The first framework focuses on the dynamics of closed quantum systems governed by time-dependent Hamiltonians. Given sparse samples of the time-evolution operator, a neural network reconstructs the complete dynamics without requiring explicit knowledge of the underlying Hamiltonian. For systems ranging from 2 to 8 qubits, the method achieves average fidelities close to 0.99 while significantly reducing inference time compared with reference approaches.
+
+The second framework addresses the Quantum Marginal Problem by combining convolutional autoencoders with physics-based operators that enforce consistency between prescribed marginals and the reconstructed global state. The method generates physically valid states for systems of 3 to 8 qubits, enables knowledge transfer across different system sizes, and provides substantially faster inference than conventional optimization-based solvers.
+
+Taken together, these results demonstrate that explicitly incorporating physical principles into the learning process can extend the capabilities of conventional computational methods for solving challenging quantum-information problems.

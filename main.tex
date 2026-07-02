@@ -37,12 +37,10 @@
 \usepackage[hidelinks]{hyperref}
 
 %-----------------------------------------------------------
-% Interlineado doble (3.3); excepciones a espacio simple:
-% notas, leyendas de figuras/tablas, índices y bibliografía.
+% Interlineado simple en todo el documento.
 %-----------------------------------------------------------
-\doublespacing
-\captionsetup{font={small,stretch=1.0}}                 % leyendas a espacio simple (3.3.e)
-\AtBeginEnvironment{thebibliography}{\singlespacing}     % bibliografía a espacio simple (3.3.b)
+\singlespacing
+\captionsetup{font={small}}                 % leyendas en tamaño reducido
 
 %-----------------------------------------------------------
 % Encabezados de capítulo: centrados, MAYÚSCULA y negrita (3.6.b)
@@ -73,17 +71,13 @@
 \input{chapters/copyright}        % Página de derecho de autor (2.1.2)
 \input{chapters/acknowledgements} % Agradecimientos (2.1.4)
 
-% Índices a espacio simple (3.3.c)
-\begin{singlespace}
 \tableofcontents                  % Tabla de contenido (2.1.5)
 \listoftables                     % Índice de tablas (2.1.6)
 \listoffigures                    % Índice de ilustraciones (2.1.7)
-\end{singlespace}
 
-\begin{singlespace}
 \input{chapters/resumen}          % Resumen en español (2.1.8)
 \input{chapters/abstract}         % Abstract en inglés (página siguiente al resumen)
-\end{singlespace}
+
 %==================== Cuerpo de la tesis ===================
 % Numeración árabe desde la introducción (3.5.b)
 \cleardoublepage

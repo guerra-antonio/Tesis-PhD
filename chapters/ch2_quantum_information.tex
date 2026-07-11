@@ -18,8 +18,9 @@ A central aspect in the formulation of any mathematical model describing the phy
 
 The density matrix was originally introduced to describe ensembles of quantum states. More generally, the quantum state of an isolated physical system can be equivalently represented in terms of a density operator. In this formalism, an operator $\rho$ represents a statistical ensemble $\{p_i, \ket{\psi_i}\}$ and is defined by the following properties:
 \begin{itemize}
-    \item[(1)] Normalization: $\Tr(\rho) = 1$.
-    \item[(2)] Positivity: $\rho$ is positive semidefinite, i.e., for all eigenvalues $\{\lambda_i\}$ of $\rho$, one has $\lambda_i \geq 0$.
+    \item[(1)] Hermiticity: $\rho = \rho^{\dagger}$.
+    \item[(2)] Normalization: $\Tr(\rho) = 1$.
+    \item[(3)] Positivity: $\rho$ is positive semidefinite, i.e., $\bra{\psi}\rho\ket{\psi} \geq 0$ for all $\ket{\psi}$, or equivalently, all its eigenvalues satisfy $\lambda_i \geq 0$.
 \end{itemize}
 
 Under these conditions, the density operator $\rho$ can be written as
@@ -180,7 +181,7 @@ When dealing with composite quantum systems, a natural question arises regarding
 
 The \emph{quantum marginal problem} asks whether a given set of reduced density matrices is compatible with a global quantum state. More precisely, given a collection of density operators describing subsystems of a composite system, one seeks to determine whether there exists a joint density matrix whose reduced states coincide with the given marginals.
 
-Unlike the classical case, not every set of locally consistent marginals admits a global quantum extension. This incompatibility arises from genuinely quantum constraints, such as entanglement and the structure of the underlying Hilbert space. As a consequence, reduced density matrices do not, in general, uniquely determine the global state, and different global states may share the same set of marginals.
+The quantum marginal problem exhibits genuinely quantum features with no classical counterpart. A representative example is the monogamy of entanglement: if two subsystems $A$ and $B$ are maximally entangled, then neither can be entangled with a third subsystem $C$, which constrains the compatibility of overlapping marginals such as $\rho_{AB}$ and $\rho_{BC}$. As a consequence, reduced density matrices do not, in general, uniquely determine the global state, and different global states may share the same set of marginals.
 
 The quantum marginal problem highlights fundamental limitations in the reconstruction of global quantum states from local information and plays an important role in quantum information theory, quantum chemistry, and many-body physics. In particular, it provides a conceptual framework for understanding the emergence of mixed reduced states, the role of entanglement, and the challenges associated with state and process reconstruction in composite quantum systems. This problem will be discussed in more detail in the following chapters.
 
@@ -310,7 +311,7 @@ The first terms of the Magnus expansion are given by
                     & \quad + [H(\tau''),[H(\tau'),H(\tau)]]
     \Big),
 \end{align}
-while higher-order terms involve increasingly nested commutators of the Hamiltonian evaluated at different times.
+while higher-order terms involve increasingly nested commutators of the Hamiltonian evaluated at different times. The Magnus series converges, and the exponential representation is therefore valid, provided that $\int_{t_0}^{t} \norm{H(\tau)}_2 \, \mathrm{d}\tau < \pi$, where $\norm{\cdot}_2$ denotes the spectral (operator) norm~\cite{blanes2009}; this convergence condition underlies the normalization of the Hamiltonian introduced in the applications of Chapter~\ref{ch:results-pinn-unitaries}.
 
 A key advantage of the Magnus expansion is that, at any finite truncation order, the time-evolution operator is explicitly written as the exponential of an anti-Hermitian operator. Consequently, since the Hamiltonian $H(t)$ is Hermitian, the truncated evolution operator remains unitary by construction.
 
@@ -574,10 +575,10 @@ For any pair of density operators $\rho$ and $\sigma$, the fidelity satisfies th
               F(U\rho U^\dagger,\, U\sigma U^\dagger) = F(\rho,\sigma).
           \end{equation}
 
-    \item \textbf{Joint concavity:}
+    \item \textbf{Joint concavity of the square-root fidelity:}
           For any sets $\{\rho_i\}$, $\{\sigma_i\}$ and probabilities $\{p_i\}$,
           \begin{equation}
-              F \qty(\sum_i p_i \rho_i, \sum_i p_i \sigma_i ) \geq \sum_i p_i F(\rho_i,\sigma_i).
+              \sqrt{F}\qty(\sum_i p_i \rho_i, \sum_i p_i \sigma_i ) \geq \sum_i p_i \sqrt{F(\rho_i,\sigma_i)}.
           \end{equation}
 \end{itemize}
 

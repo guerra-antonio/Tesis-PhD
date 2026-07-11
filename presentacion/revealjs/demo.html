@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<!--
+  DEMO — reveal.js (HTML/web, lo más visual para el público)
+  Uso: abrir este archivo en el navegador (doble clic).
+       Requiere conexión a internet la primera vez (carga reveal.js + MathJax
+       desde CDN). Navegación con flechas; tecla "F" pantalla completa; "S" notas.
+-->
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Defensa — demo reveal.js</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/theme/white.css" id="theme">
+
+  <style>
+    :root { --udec: #00468c; }
+    .reveal h1, .reveal h2, .reveal h3 { color: var(--udec); text-transform: none; }
+    .reveal { font-size: 30px; }
+    .reveal section img { border: none; box-shadow: none; margin: 0; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1em; align-items: center; }
+    .cols-wide { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.2em; align-items: start; }
+    .callout {
+      background: #eaf1f9; border-left: 5px solid var(--udec);
+      padding: 0.6em 0.9em; border-radius: 4px; text-align: left; font-size: 0.85em;
+    }
+    .reveal ul { display: block; }
+    .title-accent { color: var(--udec); }
+    .reveal .standout { font-size: 1.3em; }
+  </style>
+</head>
+<body>
+<div class="reveal"><div class="slides">
+
+  <!-- Portada -->
+  <section>
+    <h2>Deep Learning para problemas de información cuántica</h2>
+    <p><em>Defensa de Tesis Doctoral — demo reveal.js</em></p>
+    <p style="font-size:0.8em; margin-top:1.5em;">
+      Antonio Guerra<br>
+      Universidad de Concepción
+    </p>
+  </section>
+
+  <!-- Roadmap -->
+  <section>
+    <h3>Hoja de ruta</h3>
+    <ol style="font-size:0.9em;">
+      <li><b>Background</b> — información cuántica y deep learning</li>
+      <li><b>Estado del arte</b> — combinando ambos mundos</li>
+      <li><b>Contribución 1</b> — interpolación de unitarias (PINNs)</li>
+      <li><b>Contribución 2</b> — reconstrucción desde marginales (CDAE + MIO)</li>
+      <li><b>Conclusiones</b> y trabajo futuro</li>
+    </ol>
+    <div class="callout" style="margin-top:1em;">
+      <b>Idea rectora.</b> Incrustar la física conocida en el aprendizaje
+      (<em>physics-informed</em>) extiende los métodos clásicos a problemas
+      cuya complejidad crece como \(2^N\).
+    </div>
+  </section>
+
+  <!-- Background -->
+  <section>
+    <h3>Background: la barrera exponencial</h3>
+    <div class="cols-wide">
+      <div style="text-align:left; font-size:0.9em;">
+        Un estado de \(N\) qubits vive en un espacio de dimensión \(2^N\):
+        \[ \rho(t) = U(t)\,\rho_0\,U^{\dagger}(t), \qquad i\dot U = H(t)\,U \]
+        <ul>
+          <li>Construir/exponenciar \(U(t)\) escala como \(\mathcal{O}(2^{3N})\).</li>
+          <li>Con \(H(t)\) dependiente del tiempo no hay \(e^{-iHt}\) cerrado.</li>
+        </ul>
+      </div>
+      <div class="callout">
+        <b>Physics-informed learning.</b> La física entra por la <em>loss</em>:
+        la red aprende solo soluciones físicamente admisibles (unitaridad,
+        positividad, marginales).
+      </div>
+    </div>
+  </section>
+
+  <!-- Contribución 1 -->
+  <section>
+    <h3>Contribución 1 — Interpolación de unitarias (PINNs)</h3>
+    <div class="cols">
+      <div style="text-align:left; font-size:0.85em;">
+        Dada \(U(t_i)\) en tiempos muestreados, interpolar \(U(t)\) en todo
+        \([0,T]\) <b>sin conocer el Hamiltoniano</b>.
+        \[ F(U,U_\theta) = \left|\tfrac{1}{d}\,\mathrm{Tr}[U^{\dagger}U_\theta]\right|^2 \]
+        <ul>
+          <li>Fidelidad \(\approx 0.99\) (2–8 qubits)</li>
+          <li>Speedups \(8.9\times\)–\(19.3\times\) vs. geodésica</li>
+        </ul>
+      </div>
+      <div><img src="../assets/timing_benchmark.png" alt="timing benchmark" style="width:100%;"></div>
+    </div>
+  </section>
+
+  <!-- Contribución 2 -->
+  <section>
+    <h3>Contribución 2 — Reconstrucción desde marginales (CDAE + MIO)</h3>
+    <div class="cols">
+      <div style="text-align:left; font-size:0.85em;">
+        El <em>Quantum Marginal Problem</em> (QMA-completo): dado
+        \(\{\sigma_{\mathcal{J}}\}\), reconstruir un estado global \(\rho\) compatible.
+        <ul>
+          <li>Matriz de densidad → imagen de 2 canales</li>
+          <li>CDAE + MIO → estado físico válido</li>
+          <li><b>Transfer learning</b> de 3 a 8 qubits</li>
+          <li>Más rápido que SDP (resuelve donde SDP falla)</li>
+        </ul>
+      </div>
+      <div><img src="../assets/DA_architecture.png" alt="CDAE architecture" style="width:100%;"></div>
+    </div>
+  </section>
+
+  <!-- Cierre -->
+  <section data-background-color="#00468c">
+    <p class="standout" style="color:white;">
+      Dos problemas duros, un mismo patrón:<br>
+      <b>la física en la loss</b> convierte lo intratable en aprendible.
+    </p>
+  </section>
+
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/plugin/math/math.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'slide',
+    plugins: [ RevealMath.MathJax3 ],
+  });
+</script>
+</body>
+</html>

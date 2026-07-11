@@ -1,0 +1,78 @@
+\documentclass[tikz,border=12pt]{standalone}
+\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,backgrounds,fit,calc}
+
+\definecolor{cblue}{RGB}{31,90,150}
+\definecolor{cbluefill}{RGB}{225,236,247}
+\definecolor{cgreen}{RGB}{40,120,55}
+\definecolor{cgreenfill}{RGB}{222,240,220}
+\definecolor{cgreenside}{RGB}{30,95,42}
+\definecolor{cgreentop}{RGB}{60,150,72}
+\definecolor{cpurple}{RGB}{95,50,135}
+\definecolor{cpurplefill}{RGB}{240,235,247}
+\definecolor{cnavy}{RGB}{20,45,90}
+
+\begin{document}
+\begin{tikzpicture}[
+  font=\small,
+  >={Stealth[length=2.6mm,width=2.0mm]},
+  xcell/.style={minimum size=10mm, draw=cblue!55, line width=0.4pt, fill=cbluefill, anchor=center},
+  kcell/.style={minimum size=10mm, draw=cgreen!75, line width=0.5pt, fill=cgreenfill, anchor=center},
+  ycell/.style={minimum size=10mm, draw=cpurple!60, line width=0.5pt, fill=cpurplefill, anchor=center},
+]
+
+\def\dx{0.32}\def\dy{0.42}
+
+% ============ INPUT 5x5 (patch visible) ============
+% highlight the receptive field first (behind cells)
+\fill[cgreen!22] (0.5,5.5) rectangle (3.5,2.5);
+\foreach \r in {1,...,5}{
+  \foreach \c in {1,...,5}{
+    \node[xcell] (X\r\c) at (\c,{6-\r}) {\scriptsize$x_{\r\c}$};
+  }
+}
+\draw[cblue, line width=1.1pt] (0.5,5.5) rectangle (5.5,0.5);
+\draw[cgreen, line width=1.4pt] (0.5,5.5) rectangle (3.5,2.5); % patch border
+\node[cnavy, font=\bfseries, anchor=north] at (3.0,0.15) {Input ($X$), $5\times5$};
+
+% ============ SEPARATE (FLAT) KERNEL (floating above the patch) ============
+\coordinate (KbL) at (1.5,7.0);
+\coordinate (KtR) at (4.5,10.0);
+% front face = kernel grid
+\foreach \r in {1,...,3}{
+  \foreach \c in {1,...,3}{
+    \node[kcell] (K\r\c) at ({1.0+\c},{10.5-\r}) {\scriptsize$k_{\r\c}$};
+  }
+}
+\draw[cgreen, line width=1.1pt] (KbL) rectangle (KtR);
+\node[cgreen, font=\bfseries] at (3,10.65) {Kernel ($K$), $3\times3$};
+
+% ============ FRUSTUM: patch corners -> kernel corners ============
+\foreach \pp/\kk in {{0.5,5.5}/{1.5,10.0}, {3.5,5.5}/{4.5,10.0},
+                     {3.5,2.5}/{4.5,7.0}, {0.5,2.5}/{1.5,7.0}}{
+  \draw[cgreen!75, dashed, line width=0.6pt] (\pp) -- (\kk);
+}
+
+% ============ big operation arrow (centered on midline y=3) ============
+\draw[cnavy, ->, line width=1.3pt] (6.0,3.0) -- (8.4,3.0);
+\node[cnavy, align=center, font=\scriptsize] at (7.2,3.5) {convolution};
+
+% ============ OUTPUT 3x3 (smaller, centered on y=3) ============
+\fill[cpurple!22] (9.0,4.5) rectangle (10.0,3.5);
+\foreach \r in {1,...,3}{
+  \foreach \c in {1,...,3}{
+    \pgfmathtruncatemacro{\isone}{(\r==1)&&(\c==1) ? 1 : 0}
+    \ifnum\isone=1
+      \node[ycell, fill=none, draw=cpurple, line width=1.4pt] (Y\r\c) at ({8.5+\c},{5-\r}) {\scriptsize$y_{\r\c}$};
+    \else
+      \node[ycell] (Y\r\c) at ({8.5+\c},{5-\r}) {\scriptsize$y_{\r\c}$};
+    \fi
+  }
+}
+\draw[cpurple, line width=1.1pt] (9.0,4.5) rectangle (12.0,1.5);
+\node[cnavy, font=\bfseries, align=center] at (10.5,5.35) {Feature map ($Y$), $3\times3$};
+
+\end{tikzpicture}
+\end{document}

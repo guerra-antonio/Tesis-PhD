@@ -7,12 +7,12 @@ In particular, the concepts introduced here are essential for formulating quantu
 
 Throughout this chapter, all vector spaces are assumed to be finite-dimensional, which ensures the equivalence of norms and the validity of the operator representations employed in the remainder of this thesis.
 
-\section{Vector spaces}
+\section{Vector space}
 \label{sec:vectorial-space}
 
-In physics, mathematical objects are assigned physical meaning in order to describe observable quantities and dynamical laws. Physical theories are therefore formulated in terms of abstract mathematical structures whose elements acquire a direct physical interpretation. A simple example arises in classical mechanics, where the position of a particle is represented by a vector in three-dimensional real space, $\mathbb{R}^3$. In this representation, vectors are mathematical objects composed of three real-valued components, each corresponding to a spatial coordinate.
+In physics, mathematical objects are assigned physical meaning in order to describe observable quantities and dynamical laws. Physical theories are therefore formulated in terms of abstract mathematical structures whose elements acquire a direct physical interpretation. A simple example arises in classical mechanics, where the position of a particle is represented by a vector in the three-dimensional Euclidean space, $\mathbb{R}^3$. In this representation, each vector consists of three real-valued components corresponding to the spatial coordinates of the particle.
 
-This construction can be naturally generalized to $n$ dimensions, leading to the vector space $\mathbb{R}^n$, whose elements are vectors composed of $n$ real components. More generally, the components of vectors need not be restricted to real numbers, but may belong to a more general set of scalars known as a \emph{field}, most commonly $\mathbb{R}$ or $\mathbb{C}$. By varying both the dimensionality of the vectors and the underlying field, a broad class of vector spaces can be constructed.
+This construction naturally generalizes to $n$ dimensions, giving rise to the vector space $\mathbb{R}^n$. More generally, a vector space is defined over a field $\mathbb{F}$, whose elements serve as the scalars used in linear combinations of vectors. The most common choices are the fields of real numbers $\mathbb{R}$, and complex numbers $\mathbb{C}$. By varying both the dimension of the space and the field over which it is defined, a broad class of vector spaces can be constructed.
 
 To provide a precise mathematical definition, it is necessary to specify not only the elements of the space, but also the operations that can be performed on them. A vector space $\mathcal{V}$ over a field $\mathbb{F}$ is therefore defined as a set equipped with vector addition and scalar multiplication satisfying the vector-space axioms, such as those presented in Ref.~\cite{Devaud2001}. Throughout this work, both real and complex vector spaces are employed, with complex vector spaces playing a central role in the formulation of quantum mechanics.
 
@@ -30,7 +30,7 @@ and satisfies the following properties for all $\mathbf{u}, \mathbf{v}, \mathbf{
 \begin{itemize}
     \item \textbf{Linearity in the second argument:} $\langle \mathbf{u}, \alpha \mathbf{v} + \mathbf{w} \rangle = \alpha \langle \mathbf{u}, \mathbf{v} \rangle + \langle \mathbf{u}, \mathbf{w} \rangle$.
     \item \textbf{Conjugate symmetry:} $\langle \mathbf{u}, \mathbf{v} \rangle = \langle \mathbf{v}, \mathbf{u} \rangle^{*}$.
-    \item \textbf{Positive definiteness:} $\langle \mathbf{v}, \mathbf{v} \rangle \geq 0$, with equality if and only if $\mathbf{v} = \mathbf{0}$.
+    \item \textbf{Positive definiteness:} $\langle \mathbf{v}, \mathbf{v} \rangle \geq 0$, with equality holds if and only if $\mathbf{v} = \mathbf{0}$.
 \end{itemize}
 Note that conjugate symmetry implies that $\langle \mathbf{v}, \mathbf{v} \rangle$ is real for every $\mathbf{v}$, so that the positive-definiteness condition is well defined.
 
@@ -72,10 +72,10 @@ This distance satisfies the standard metric properties:
     \item $d(\mathbf{v}, \mathbf{u}) \le d(\mathbf{v}, \mathbf{w}) + d(\mathbf{w}, \mathbf{u})$.
 \end{enumerate}
 
-Distances quantify approximation errors and deviations between elements of the space. In the context of this thesis, they play a fundamental role in defining loss functions, convergence criteria, and stability measures for learning algorithms and operator approximations.
+Distances provide a natural measure of similarity between elements of a vector space. The smaller the distance, the more closely the elements resemble one another. Consequently, they offer a rigorous way to quantify approximation errors and deviations. In the context of this thesis, distance measures play a fundamental role in defining loss functions, convergence criteria, and stability measures for learning algorithms and operator approximations.
 
 % ============================================================
-\section{Bases of vector spaces}
+\section{Bases of vector space}
 \label{sec:basis}
 
 To represent vectors and linear operators in a concrete and computationally useful form, it is necessary to introduce the concept of a basis of a vector space. A basis provides a minimal set of vectors from which every element of the space can be expressed uniquely as a linear combination, thereby enabling coordinate representations and matrix formulations.
@@ -114,17 +114,19 @@ Elements of the dual space act on vectors to produce scalar values and play a fu
 
 Once a basis of $\mathcal{V}$ is fixed, vectors admit a coordinate representation as column vectors, while linear functionals in the dual space are naturally represented as row vectors. This distinction reflects their different algebraic roles: vectors represent elements of the space itself, whereas linear functionals act on vectors to produce scalars. In this representation, the action of a functional on a vector corresponds to the matrix product between a row vector and a column vector, yielding a scalar. It is important to emphasize that this row--column distinction is a feature of the chosen representation and not of the abstract definitions of $\mathcal{V}$ and $\mathcal{V}^\ast$.
 
-When $\mathcal{V}$ is endowed with an inner product, each vector $\ket{v} \in \mathcal{V}$ naturally defines a corresponding linear functional through the mapping
+When working with Hilbert spaces, it is convenient to adopt Dirac's bra-ket notation, which provides a compact representation of vectors, linear functionals, and inner products. In this notation, vectors in $\mathcal{V}$ are denoted by \emph{kets} $\ket{v}$, while linear functionals acting on $\mathcal{V}$ are denoted by \emph{bras} $\bra{v}$, which belong to the dual space $\mathcal{V}^\ast$.
+
+When $\mathcal{V}$ is endowed with an inner product, every ket $\ket{v}$ uniquely defines a corresponding bra through the mapping
 \begin{equation}
     \ket{u} \mapsto \braket{v}{u}.
 \end{equation}
-This construction establishes a one-to-one, conjugate-linear correspondence, known as the Riesz representation, between vectors in $\mathcal{V}$ and elements of the dual space $\mathcal{V}^\ast$, allowing vectors and linear functionals to be treated within a unified framework.
+This correspondence, known as the \emph{Riesz representation theorem}, establishes a one-to-one, conjugate-linear mapping between vectors in $\mathcal{V}$ and linear functionals in $\mathcal{V}^\ast$, allowing both objects to be treated within a unified mathematical framework.
 
-Within Dirac's notation, vectors in $\mathcal{V}$ are denoted by \emph{kets} $\ket{v}$, while the associated linear functionals in $\mathcal{V}^\ast$ are denoted by \emph{bras} $\bra{v}$. The inner product between two vectors $\ket{u}$ and $\ket{v}$ is written as
+The inner product between two vectors $\ket{u}$ and $\ket{v}$ is written as
 \begin{equation}
     \braket{u}{v},
 \end{equation}
-which is linear in its second argument and conjugate linear in its first, in accordance with the conventions adopted in quantum mechanics.
+which is linear in its second argument and conjugate-linear in its first, following the convention adopted throughout quantum mechanics.
 
 A complex vector space equipped with an inner product and complete with respect to the norm induced by that inner product, that is, such that every Cauchy sequence converges to an element of the space, is called a \emph{Hilbert space}. In this work, all Hilbert spaces are assumed to be finite-dimensional, so that completeness is automatically guaranteed and no technical distinction between inner-product spaces and Hilbert spaces is required.
 

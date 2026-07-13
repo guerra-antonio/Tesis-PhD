@@ -16,7 +16,7 @@ A central aspect in the formulation of any mathematical model describing the phy
 
 \subsection*{\small\textit{Postulate 1}}
 
-The density matrix was originally introduced to describe ensembles of quantum states. More generally, the quantum state of an isolated physical system can be equivalently represented in terms of a density operator. In this formalism, an operator $\rho$ represents a statistical ensemble $\{p_i, \ket{\psi_i}\}$ and is defined by the following properties:
+The density operator was originally introduced to describe ensembles of quantum states. More generally, the quantum state of an isolated physical system can be equivalently represented in terms of a density operator. In this formalism, an operator $\rho$ represents a statistical ensemble $\{p_i, \ket{\psi_i}\}$ and is defined by the following properties:
 \begin{itemize}
     \item[(1)] Hermiticity: $\rho = \rho^{\dagger}$.
     \item[(2)] Normalization: $\Tr(\rho) = 1$.
@@ -164,7 +164,7 @@ This property justifies the interpretation of $\rho^{A}$ as the effective quantu
 \paragraph{Entanglement.}
 Entanglement is one of the most intensively studied resources in quantum information theory, as it captures the existence of correlations in composite quantum systems that have no classical counterpart. These correlations manifest themselves in the measurement outcomes of entangled quantum states and cannot be explained within the framework of classical physics, thus highlighting one of the most fundamental differences between classical and quantum theories.
 
-From a formal perspective, entanglement is naturally defined within the density matrix formalism. Consider a bipartite quantum system composed of two subsystems $A$ and $B$, described by a joint density matrix $\rho_{AB}$ acting on the composite Hilbert space $\mathcal{H}_A \otimes \mathcal{H}_B$. The state $\rho_{AB}$ is said to be \emph{separable} if it can be expressed as a convex combination of product states, namely,
+From a formal perspective, entanglement is naturally defined within the density operator formalism. Consider a bipartite quantum system composed of two subsystems $A$ and $B$, described by a joint density operator $\rho_{AB}$ acting on the composite Hilbert space $\mathcal{H}_A \otimes \mathcal{H}_B$. The state $\rho_{AB}$ is said to be \emph{separable} if it can be expressed as a convex combination of product states, namely,
 \begin{equation}
     \label{eq:separable}
     \rho_{AB} = \sum_k p_k\, \rho_A^{(k)} \otimes \rho_B^{(k)},
@@ -179,7 +179,7 @@ A particularly relevant property arises when considering pure states. If the joi
 \paragraph{The quantum marginal problem.}
 When dealing with composite quantum systems, a natural question arises regarding the relationship between global states and their reduced descriptions. Given a multipartite quantum state $\rho_{AB\cdots}$, its reduced states (or \emph{marginals}) are obtained by taking partial traces over subsystems. While this procedure is straightforward, the inverse problem is highly nontrivial.
 
-The \emph{quantum marginal problem} asks whether a given set of reduced density matrices is compatible with a global quantum state. More precisely, given a collection of density operators describing subsystems of a composite system, one seeks to determine whether there exists a joint density matrix whose reduced states coincide with the given marginals.
+The \emph{quantum marginal problem} asks whether a given set of reduced density matrices is compatible with a global quantum state. More precisely, given a collection of density operators describing subsystems of a composite system, one seeks to determine whether there exists a joint density operator whose reduced states coincide with the given marginals.
 
 The quantum marginal problem exhibits genuinely quantum features with no classical counterpart. A representative example is the monogamy of entanglement: if two subsystems $A$ and $B$ are maximally entangled, then neither can be entangled with a third subsystem $C$, which constrains the compatibility of overlapping marginals such as $\rho_{AB}$ and $\rho_{BC}$. As a consequence, reduced density matrices do not, in general, uniquely determine the global state, and different global states may share the same set of marginals.
 
@@ -404,7 +404,7 @@ These matrices satisfy several important algebraic relations,
 where $\delta_{ij}$ denotes the Kronecker delta, $\{\cdot,\cdot\}$ denotes the anticommutator and $i,j,k \in \{1,2,3\}$.
 
 \paragraph{Pauli vectors.}
-It is useful to introduce a correspondence between vectors in $\mathbb{R}^3$ and the space of traceless Hermitian $2 \times 2$ matrices. This correspondence is naturally established through the Pauli matrices, which span the traceless Hermitian $2\times 2$ matrices, i.e.\ the generators of $SU(2)$ (the elements of $\mathfrak{su}(2)$ up to a factor of $i$). Within this framework, any single-qubit density matrix can be parametrized in terms of a real three-dimensional vector, known as the Bloch vector.
+It is useful to introduce a correspondence between vectors in $\mathbb{R}^3$ and the space of traceless Hermitian $2 \times 2$ matrices. This correspondence is naturally established through the Pauli matrices, which span the traceless Hermitian $2\times 2$ matrices, i.e.\ the generators of $SU(2)$ (the elements of $\mathfrak{su}(2)$ up to a factor of $i$). Within this framework, any single-qubit density operator can be parametrized in terms of a real three-dimensional vector, known as the Bloch vector.
 
 Explicitly, a one-qubit density operator can be written as
 \begin{equation}

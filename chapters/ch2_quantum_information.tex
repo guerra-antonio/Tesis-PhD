@@ -317,7 +317,7 @@ A key advantage of the Magnus expansion is that, at any finite truncation order,
 
 From a numerical standpoint, the Magnus expansion offers improved stability and physical consistency, as it preserves norm and probability conservation without requiring re-normalization procedures. Nevertheless, its practical applicability is limited by the rapid growth in the number and complexity of nested commutators appearing at higher orders, which can significantly increase the computational cost. Despite this limitation, low-order Magnus expansions often provide accurate and reliable approximations, making them well suited for controlled simulations of time-dependent quantum dynamics.
 
-It is also worth noting that if the Hamiltonian $H(t)$ commutes with itself at different times all higher-order Magnus terms vanish and the expansion reduces to the first-order contribution $\Omega_1(t,t_0)$. This result highlights that the necessity of including higher-order terms is directly related to the non-commutativity of the Hamiltonian at different times, and therefore to the intrinsic complexity of the time-dependent dynamics.
+If the Hamiltonian $H(t)$ commutes with itself at different times, all higher-order Magnus terms vanish and the expansion reduces to the first-order contribution $\Omega_1(t,t_0)$. The necessity of including higher-order terms is therefore tied to the non-commutativity of the Hamiltonian at different times, and hence to the complexity of the time-dependent dynamics.
 
 \subparagraph{Trotter formula.}
 An alternative approximation to the time-evolution operator for time-dependent Hamiltonians is provided by the Trotter product formula. This approach is particularly useful when the Hamiltonian can be written as a sum of simpler (generally non-commuting) contributions,
@@ -582,7 +582,7 @@ For any pair of density operators $\rho$ and $\sigma$, the fidelity satisfies th
           \end{equation}
 \end{itemize}
 
-It is important to note that this expression does not define a metric on the space of density operators, as it does not satisfy the triangle inequality. Nevertheless, it remains a very useful quantity for comparing density matrices.
+This expression does not define a metric on the space of density operators, since it does not satisfy the triangle inequality. It nevertheless remains a useful quantity for comparing density matrices.
 
 \paragraph{Fidelity between operations.}
 To compare quantum operations, it is convenient to adopt the framework of quantum channels, where a quantum operation is described as a linear map $\mathcal{E}$ acting on density operators,

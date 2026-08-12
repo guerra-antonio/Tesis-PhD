@@ -1,0 +1,665 @@
+% =====================================================================
+% Defensa de Tesis Doctoral
+% Antonio Guerra - Universidad de Concepcion
+% "Neural Network Methods for the Study of Physical Systems
+%  in Quantum Information"
+%
+% Compilar con: pdflatex defensa_tesis.tex  (dos veces)
+%
+% PRESUPUESTO DE TIEMPO (objetivo 35 min, margen a 40)
+%   Sec 1  Informacion cuantica ....... 6 min ...  7 slides
+%   Sec 2  Deep learning .............. 5 min ...  5 slides
+%   Sec 3  Literatura ................. 5 min ...  5 slides
+%   Sec 4  Marginales cuanticos ....... 9 min ...  9 slides
+%   Sec 5  Interpolacion de unitarias . 9 min ...  9 slides
+%   Sec 6  Trabajos futuros ........... 3 min ...  3 slides
+%
+% Los bloques marcados con % TODO requieren tus figuras o numeros.
+% =====================================================================
+
+\documentclass[10pt,aspectratio=169]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{whale}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{caption}[numbered]
+\setbeamerfont{footnote}{size=\tiny}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{braket}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,backgrounds}
+
+% Notacion consistente en toda la charla
+\newcommand{\Hil}{\mathcal{H}}
+\newcommand{\Tr}{\mathrm{Tr}}
+\newcommand{\Uop}{\hat{U}}
+\newcommand{\Hop}{\hat{H}}
+\newcommand{\dens}{\rho}
+\newcommand{\densh}{\hat{\rho}}
+
+\title[Redes neuronales en informacion cuantica]{Métodos de redes neuronales para el estudio de sistemas físicos en información cuántica}
+\author[A. Guerra]{Antonio Guerra}
+\institute[UdeC]{Departamento de Física, Universidad de Concepción \\ Instituto Milenio de Investigación en Óptica}
+\date{Agosto 2026}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Estructura de la presentación}
+  \tableofcontents
+\end{frame}
+
+% =====================================================================
+\section{Información cuántica}
+% =====================================================================
+
+\begin{frame}{Estados cuánticos y matriz densidad}
+  Un sistema cuántico queda descrito por un operador densidad $\dens \in \mathcal{L}(\Hil)$ que satisface
+  \[
+    \dens = \dens^{\dagger}, \qquad \dens \geq 0, \qquad \Tr(\dens) = 1 .
+  \]
+  \pause
+  \begin{itemize}
+    \item Estado puro: $\Tr(\dens^2) = 1$, equivalentemente $\dens = \ket{\psi}\bra{\psi}$.
+    \item Estado mixto: $\Tr(\dens^2) < 1$.
+  \end{itemize}
+  \pause
+  \vfill
+  \begin{block}{Por qué importa aquí}
+    Las tres condiciones anteriores definen una variedad no trivial dentro del espacio de matrices complejas. Una red neuronal que produzca matrices arbitrarias no genera estados físicos. Esta restricción es el punto de partida del primer trabajo.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Sistemas compuestos y trazas parciales}
+  Para un sistema de $N$ partes, $\Hil = \Hil_1 \otimes \cdots \otimes \Hil_N$, con dimensión $\dim \Hil = \prod_i d_i$.
+  \pause
+  \vfill
+  El estado de un subconjunto $S$ de partes se obtiene por traza parcial sobre el complemento,
+  \[
+    \dens_S = \Tr_{\bar{S}}(\dens) .
+  \]
+  \pause
+  \begin{itemize}
+    \item $\dens_S$ es el \emph{marginal} asociado a $S$.
+    \item Los marginales son accesibles experimentalmente con muchas menos mediciones que $\dens$ completo.
+    \item La reconstrucción de $\dens$ a partir de marginales es el problema del trabajo I.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{El costo exponencial}
+  La dimensión del espacio de Hilbert crece como $d^N$. Para $N$ qubits:
+  \vfill
+  \begin{center}
+  \begin{tabular}{lcc}
+    \toprule
+    $N$ & $\dim \Hil$ & parámetros reales de $\dens$ \\
+    \midrule
+    2  & 4    & 15 \\
+    4  & 16   & 255 \\
+    6  & 64   & 4\,095 \\
+    8  & 256  & 65\,535 \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \vfill
+  \pause
+  Este escalamiento es el obstáculo común a la tomografía, la simulación de la dinámica y la certificación de recursos cuánticos. Es también lo que motiva el uso de representaciones aprendidas.
+\end{frame}
+
+\begin{frame}{Dinámica unitaria}
+  La evolución de un sistema cerrado obedece
+  \[
+    i\hbar \frac{d}{dt}\ket{\psi(t)} = \Hop(t)\ket{\psi(t)}, \qquad \ket{\psi(t)} = \Uop(t)\ket{\psi(0)} .
+  \]
+  \pause
+  Para $\Hop$ independiente del tiempo, $\Uop(t) = e^{-i\Hop t/\hbar}$.
+  \pause
+  \vfill
+  \begin{alertblock}{El caso dependiente del tiempo}
+    Si $[\Hop(t_1), \Hop(t_2)] \neq 0$, la exponencial ordenada
+    \[
+      \Uop(t) = \mathcal{T}\exp\left(-\frac{i}{\hbar}\int_0^t \Hop(t')\,dt'\right)
+    \]
+    no admite forma cerrada. Se requieren métodos de aproximación.
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}{Expansión de Magnus}
+  Se escribe $\Uop(t) = \exp(\Omega(t))$ con $\Omega = \sum_k \Omega_k$,
+  \begin{align*}
+    \Omega_1(t) &= -\frac{i}{\hbar}\int_0^t \Hop(t_1)\,dt_1, \\
+    \Omega_2(t) &= -\frac{1}{2\hbar^2}\int_0^t\!\! dt_1 \int_0^{t_1}\!\! dt_2\, [\Hop(t_1),\Hop(t_2)], \\
+    \Omega_3(t) &= \ \cdots
+  \end{align*}
+  \pause
+  \begin{itemize}
+    \item Preserva unitariedad a cualquier orden de truncamiento.
+    \item El costo por término crece rápidamente con el orden.
+    \item Requiere evaluar conmutadores anidados en cada paso temporal.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Descomposición de Trotter}
+  Para $\Hop = \Hop_A + \Hop_B$ con $[\Hop_A,\Hop_B]\neq 0$,
+  \[
+    e^{-i\Hop \Delta t} = e^{-i\Hop_A \Delta t}\, e^{-i\Hop_B \Delta t} + \mathcal{O}(\Delta t^2),
+  \]
+  y la evolución total se obtiene concatenando $n = t/\Delta t$ pasos.
+  \pause
+  \vfill
+  \begin{itemize}
+    \item El error se controla reduciendo $\Delta t$, a costa de más pasos.
+    \item Es el método estándar en simulación de circuitos cuánticos.
+    \item Junto con Magnus, define la línea base contra la cual se compara el trabajo II.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Resumen de la sección}
+  Los dos problemas que aborda esta tesis se enuncian ahora con precisión.
+  \vfill
+  \begin{block}{Problema I}
+    Dado un conjunto incompleto de marginales $\{\dens_S\}$, reconstruir un operador densidad $\dens$ compatible con ellos, garantizando hermiticidad, positividad y traza unitaria.
+  \end{block}
+  \pause
+  \begin{block}{Problema II}
+    Dada una familia de unitarias $\Uop(t)$ generada por un Hamiltoniano dependiente del tiempo, obtener una representación continua en $t$ que reproduzca la dinámica a un costo computacional menor que Magnus o Trotter.
+  \end{block}
+\end{frame}
+
+% =====================================================================
+\section{Deep learning}
+% =====================================================================
+
+\begin{frame}{Capas totalmente conectadas}
+  Una red \emph{feedforward} compone transformaciones afines con no linealidades,
+  \[
+    a^{(l)}_j = f\left(\sum_i w^{(l)}_{ij}\, a^{(l-1)}_i + b^{(l)}_j\right).
+  \]
+  \pause
+  \vfill
+  \begin{itemize}
+    \item Los parámetros $\theta = \{w, b\}$ se ajustan minimizando una función de costo.
+    \item El teorema de aproximación universal garantiza expresividad, pero no dice cuántos parámetros se necesitan.
+    \item En la práctica, la estructura del problema determina qué arquitectura es eficiente.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Redes convolucionales}
+  Una capa convolucional aplica un núcleo $k$ sobre el mapa de entrada $a$,
+  \[
+    \tilde{a}(x,y) = \sum_{\tilde{x},\tilde{y}} \sum_i a_i(\tilde{x},\tilde{y})\, k_i(x-\tilde{x},\, y-\tilde{y}).
+  \]
+  \pause
+  \vfill
+  \begin{itemize}
+    \item Pesos compartidos: invariancia traslacional y menos parámetros que una capa densa equivalente.
+    \item Estructura local: adecuada para datos con correlaciones de vecindad.
+    \item Una matriz densidad admite una representación de dos canales, parte real y parte imaginaria, análoga a una imagen.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Autoencoders}
+  Un autoencoder compone un codificador $E$ y un decodificador $D$,
+  \[
+    \dens \;\longmapsto\; \densh = D_\theta(E(\dens)),
+  \]
+  entrenados para minimizar el error de reconstrucción.
+  \pause
+  \vfill
+  \begin{itemize}
+    \item El cuello de botella fuerza una representación comprimida de la variedad de datos.
+    \item En su versión \emph{denoising}, la entrada se corrompe deliberadamente y la red aprende a recuperar la señal limpia.
+    \item Esta es la arquitectura del trabajo I.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Entrenamiento y retropropagación}
+  El ajuste de $\theta$ procede por descenso de gradiente,
+  \[
+    \theta \leftarrow \theta - \eta\, \nabla_\theta \mathcal{L}(\theta),
+  \]
+  con $\nabla_\theta \mathcal{L}$ calculado por retropropagación, esto es, aplicación sistemática de la regla de la cadena sobre el grafo de cómputo.
+  \pause
+  \vfill
+  \begin{block}{Diferenciación automática}
+    El mismo mecanismo permite obtener derivadas de la salida respecto de las \emph{entradas}, no solo respecto de los parámetros. Si la entrada es el tiempo, se obtiene $\partial_t$ de la salida de forma exacta y sin discretizar. Esta propiedad es la que hace posible el trabajo II.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Redes informadas por la física}
+  Una PINN incorpora la ecuación gobernante directamente en la función de costo,
+  \[
+    \mathcal{L} = \mathcal{L}_{\text{datos}} + \lambda\, \mathcal{L}_{\text{física}},
+    \qquad
+    \mathcal{L}_{\text{física}} = \sum_j \left\| \mathcal{D}\big[u_\theta(t_j)\big] \right\|^2 .
+  \]
+  \pause
+  \vfill
+  \begin{itemize}
+    \item El residuo se evalúa en puntos de colocación arbitrarios, sin necesidad de datos en ellos.
+    \item La solución aprendida es continua en $t$ y diferenciable.
+    \item El costo de evaluación es independiente del instante consultado.
+  \end{itemize}
+\end{frame}
+
+% =====================================================================
+\section{Deep learning en información cuántica}
+% =====================================================================
+
+\begin{frame}{Panorama de aplicaciones}
+  \small
+  \begin{center}
+  \begin{tabular}{p{3.1cm}p{4.0cm}p{4.4cm}}
+    \toprule
+    \textbf{Área} & \textbf{Objetivo} & \textbf{Referencias} \\
+    \midrule
+    Neural quantum states & Representar $\ket{\psi}$ variacionalmente & Carleo y Troyer 2017; Lange \emph{et al.} 2024 \\
+    Tomografía & Reconstruir el estado de datos de medición & Torlai \emph{et al.} 2018; Huang \emph{et al.} 2022 \\
+    Corrección de errores & Decodificar síndromes & Torlai y Melko 2017; Bausch \emph{et al.} 2024 \\
+    Hamiltonian learning & Identificar $\Hop$ desde datos & Bairey \emph{et al.} 2019; Liu y Wang 2025 \\
+    Control cuántico & Diseñar pulsos de control & Bukov \emph{et al.} 2018; Norambuena \emph{et al.} 2024 \\
+    Fases y orden topológico & Clasificar fases de la materia & Deng \emph{et al.} 2017 \\
+    Recursos cuánticos & Detectar entrelazamiento y discordia & Muñoz-Mellado \emph{et al.} 2026 \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Neural quantum states}
+  La función de onda se parametriza mediante una red, $\psi_\theta(\sigma) = \sqrt{p_\theta(\sigma)}\, e^{i\phi_\theta(\sigma)}$, y los observables se estiman por Monte Carlo,
+  \[
+    \langle \hat{O} \rangle = \sum_\sigma P_\theta(\sigma)\, O^{\mathrm{loc}}_\theta(\sigma),
+    \qquad
+    O^{\mathrm{loc}}_\theta(\sigma) = \sum_{\sigma'} \frac{\psi_\theta(\sigma')}{\psi_\theta(\sigma)} \bra{\sigma}\hat{O}\ket{\sigma'} .
+  \]
+  \pause
+  \vfill
+  \begin{itemize}
+    \item El vector de estado completo nunca se construye. Solo se evalúa la red en las configuraciones muestreadas.
+    \item El entrenamiento se guía por el Hamiltoniano, sin datos externos.
+    \item Establece el patrón que reaparece en el resto del área: representación aprendida más estimación estocástica.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Tomografía con redes neuronales}
+  Torlai \emph{et al.} (2018) reconstruyen $\ket{\psi}$ minimizando la divergencia de Kullback-Leibler entre la distribución de mediciones y las amplitudes de la red, sumada sobre varias bases,
+  \[
+    \Xi(\kappa) = \sum_{b} \mathrm{KL}\!\left[ P_b \,\|\, |\psi_\kappa|^2 \right] .
+  \]
+  \pause
+  \vfill
+  \begin{block}{Limitación relevante para esta tesis}
+    La parametrización $\psi = \sqrt{p}\,e^{i\phi}$ impone pureza por construcción. El caso mixto, que es el experimentalmente realista, exige imponer hermiticidad, positividad y traza de forma explícita.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Hamiltonian learning}
+  Dos enfoques representativos.
+  \vfill
+  \begin{itemize}
+    \item Bairey \emph{et al.}: para $\dens$ estacionario, $\langle i[\hat{A},\Hop]\rangle = 0$ define un sistema lineal $K\vec{c} = 0$, y los coeficientes se obtienen del vector singular más bajo de $K$.
+    \pause
+    \item Liu y Wang: el problema se plantea como problema inverso de la ecuación de Schrödinger, con los coeficientes de $\Hop$ como parámetros entrenables junto con los pesos de la red.
+  \end{itemize}
+  \pause
+  \vfill
+  \begin{alertblock}{Diferencia con el trabajo II}
+    Ambos apuntan a identificar los parámetros del Hamiltoniano real, y miden éxito como error paramétrico. El trabajo II apunta a caracterizar la dinámica, y mide éxito como fidelidad de la evolución reproducida.
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}{Dónde se ubican las contribuciones de esta tesis}
+  \vfill
+  \begin{block}{Trabajo I, reconstrucción de matrices densidad}
+    La literatura de tomografía con redes se ha concentrado en estados puros. El trabajo I opera sobre estados mixtos, imponiendo las condiciones de positividad y normalización mediante un operador construido para ese fin.
+  \end{block}
+  \pause
+  \begin{block}{Trabajo II, interpolación de unitarias}
+    La literatura de aprendizaje de Hamiltonianos busca identificar parámetros bajo un ansatz conocido. El trabajo II construye un generador efectivo validado por fidelidad dinámica, sin suponer la forma funcional de la dependencia temporal.
+  \end{block}
+  \vfill
+\end{frame}
+
+% =====================================================================
+\section{Trabajo I: reconstrucción desde marginales cuánticos}
+% =====================================================================
+
+\begin{frame}{Planteamiento del problema}
+  Se dispone de un subconjunto de marginales $\{\dens_S\}_{S \in \mathcal{S}}$ obtenidos experimentalmente. Se busca $\dens$ tal que
+  \[
+    \Tr_{\bar{S}}(\dens) = \dens_S \quad \forall S \in \mathcal{S},
+    \qquad \dens = \dens^\dagger, \quad \dens \geq 0, \quad \Tr(\dens)=1 .
+  \]
+  \pause
+  \vfill
+  \begin{itemize}
+    \item Cuando $\mathcal{S}$ no es informacionalmente completo, la solución no es única.
+    \item Los métodos convencionales requieren optimización convexa con restricciones, costosa al crecer $N$.
+    \item Los marginales de bajo orden son mucho más baratos de medir que $\dens$ completo.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Estrategia}
+  \begin{enumerate}
+    \item Codificar $\dens$ como un arreglo de dos canales, parte real y parte imaginaria.
+    \pause
+    \item Entrenar un autoencoder convolucional \emph{denoising} para recuperar $\dens$ a partir de una versión degradada, construida desde información marginal incompleta.
+    \pause
+    \item Imponer las condiciones de estado físico mediante el operador de imposición de marginales, aplicado sobre la salida de la red.
+  \end{enumerate}
+  \pause
+  \vfill
+  \begin{block}{Por qué una arquitectura convolucional}
+    La estructura de bloques de $\dens$ bajo particiones de subsistemas hace que las correlaciones relevantes sean locales en la representación matricial. Los pesos compartidos reducen el número de parámetros respecto de una red densa de igual capacidad.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Operador de imposición de marginales}
+  % TODO: reemplazar por la definicion exacta del MIO tal como aparece en el paper.
+  El operador $\mathcal{M}$ proyecta la salida de la red sobre el conjunto de estados compatibles con los marginales medidos,
+  \[
+    \densh \;\longmapsto\; \mathcal{M}(\densh),
+    \qquad
+    \Tr_{\bar S}\big(\mathcal{M}(\densh)\big) = \dens_S .
+  \]
+  \pause
+  \vfill
+  \begin{itemize}
+    \item La salida de la red no necesita satisfacer las restricciones por sí misma.
+    \item Las condiciones de hermiticidad, positividad y traza se garantizan por construcción, no por penalización en la función de costo.
+    \item El operador es diferenciable, de modo que puede incluirse dentro del grafo de entrenamiento.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Arquitectura}
+  % TODO: insertar el diagrama de la arquitectura.
+  \begin{center}
+    \fbox{\parbox[c][4.2cm][c]{0.8\textwidth}{\centering \textit{Diagrama: codificador convolucional, cuello de botella, decodificador, aplicación de $\mathcal{M}$ sobre la salida.}}}
+  \end{center}
+  \vfill
+  % TODO: completar con capas, canales, funcion de activacion y numero de parametros.
+\end{frame}
+
+\begin{frame}{Generación de datos y entrenamiento}
+  % TODO: ajustar a los valores exactos usados.
+  \begin{itemize}
+    \item Conjunto de entrenamiento generado según la medida de Hilbert-Schmidt sobre estados de $N$ partes.
+    \item Degradación de la entrada mediante eliminación controlada de información marginal.
+    \item Función de costo basada en la distancia entre $\dens$ y $\densh$.
+    \item Optimizador Adam, implementación en PyTorch.
+  \end{itemize}
+  \vfill
+  \pause
+  \begin{block}{Métrica de evaluación}
+    La calidad de la reconstrucción se cuantifica mediante la fidelidad
+    \[
+      F(\dens,\densh) = \left[\Tr\sqrt{\sqrt{\dens}\,\densh\,\sqrt{\dens}}\right]^2 .
+    \]
+  \end{block}
+\end{frame}
+
+\begin{frame}{Resultados: calidad de la reconstrucción}
+  % TODO: insertar figura de fidelidad frente a numero de marginales o dimension.
+  \begin{center}
+    \fbox{\parbox[c][4.5cm][c]{0.75\textwidth}{\centering \textit{Figura: fidelidad de reconstrucción.}}}
+  \end{center}
+  \vfill
+  % TODO: enunciar el resultado antes de interpretarlo, y luego decir por que importa.
+\end{frame}
+
+\begin{frame}{Resultados: efecto del operador de imposición}
+  % TODO: insertar comparacion con y sin MIO.
+  \begin{center}
+    \fbox{\parbox[c][4.5cm][c]{0.75\textwidth}{\centering \textit{Figura: comparación con y sin imposición de marginales.}}}
+  \end{center}
+  \vfill
+  % TODO: cuantificar la mejora y separar lo calculado de lo inferido.
+\end{frame}
+
+\begin{frame}{Resultados: robustez}
+  % TODO: robustez frente a ruido de medicion y frente a marginales faltantes.
+  \begin{center}
+    \fbox{\parbox[c][4.5cm][c]{0.75\textwidth}{\centering \textit{Figura: robustez frente a ruido.}}}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Conclusiones del trabajo I}
+  \begin{itemize}
+    \item La reconstrucción de estados mixtos a partir de marginales incompletos admite una solución basada en autoencoders convolucionales.
+    \pause
+    \item Imponer las condiciones de estado físico mediante un operador diferenciable resulta preferible a penalizarlas en la función de costo, porque las garantiza por construcción. % TODO: ajustar al resultado numerico que respalda esta afirmacion.
+    \pause
+    \item El método opera sobre la matriz densidad directamente, lo que lo distingue de los enfoques de tomografía neuronal restringidos a estados puros.
+  \end{itemize}
+  \vfill
+  \pause
+  \begin{block}{Limitaciones}
+    % TODO: enunciar limitaciones sin debilitar las conclusiones validas.
+    Escalamiento con el número de partes, dependencia de la distribución de entrenamiento, y ausencia de garantía de unicidad cuando el conjunto de marginales no es informacionalmente completo.
+  \end{block}
+\end{frame}
+
+% =====================================================================
+\section{Trabajo II: interpolación de unitarias}
+% =====================================================================
+
+\begin{frame}{Planteamiento del problema}
+  Se busca una representación continua de $\Uop(t)$ generada por un Hamiltoniano dependiente del tiempo, sin recalcular la evolución para cada instante consultado.
+  \pause
+  \vfill
+  \begin{itemize}
+    \item Magnus requiere evaluar conmutadores anidados en cada paso.
+    \item Trotter requiere concatenar $n = t/\Delta t$ pasos, con $n$ creciente al exigir mayor precisión.
+    \item En ambos casos, el costo de obtener $\Uop(t)$ crece con $t$.
+  \end{itemize}
+  \pause
+  \vfill
+  \begin{block}{Objetivo}
+    Una representación cuyo costo de evaluación sea independiente del instante consultado.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Formulación}
+  % TODO: ajustar a la parametrizacion exacta del paper.
+  La red toma el tiempo como entrada y devuelve los elementos de la unitaria,
+  \[
+    t \;\longmapsto\; \Uop_\theta(t),
+  \]
+  con las partes real e imaginaria como canales de salida separados.
+  \pause
+  \vfill
+  La derivada temporal se obtiene por diferenciación automática, de modo que el residuo
+  \[
+    \mathcal{L}_{\text{física}} = \sum_j \left\| i\hbar\, \partial_t \Uop_\theta(t_j) - \Hop_\theta(t_j)\, \Uop_\theta(t_j) \right\|^2
+  \]
+  puede evaluarse en cualquier punto de colocación, sin discretización temporal.
+\end{frame}
+
+\begin{frame}{Hamiltoniano efectivo}
+  El objeto reconstruido es un generador efectivo, no el Hamiltoniano microscópico.
+  \pause
+  \vfill
+  \begin{itemize}
+    \item Muchos Hamiltonianos distintos generan la misma dinámica sobre la ventana temporal y el conjunto de observables muestreados.
+    \item El método no resuelve esa degeneración, y no pretende hacerlo.
+    \item El criterio de éxito es la fidelidad de la evolución reproducida, no el error en los coeficientes.
+  \end{itemize}
+  \pause
+  \vfill
+  \begin{block}{Decisión de diseño}
+    Un constraint diferenciable sobre $\partial_t \Uop$ acercaría los coeficientes a los del Hamiltoniano real, pero exigiría medir $\Uop$ en instantes muy próximos para aproximar la derivada. Se optó por no imponerlo, para mantener el algoritmo sobre información experimentalmente accesible.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Arquitectura y entrenamiento}
+  % TODO: completar con capas, activaciones, hiperparametros y numero de parametros.
+  \begin{center}
+    \fbox{\parbox[c][4.0cm][c]{0.8\textwidth}{\centering \textit{Diagrama: arquitectura de la red y composición de la función de costo.}}}
+  \end{center}
+  \vfill
+  % TODO: detallar los terminos de la funcion de costo y sus pesos relativos.
+\end{frame}
+
+\begin{frame}{Protocolo de comparación}
+  El desempeño se evalúa frente a Magnus y Trotter bajo condiciones equiparadas.
+  \pause
+  \vfill
+  \begin{itemize}
+    \item Sistemas de 2 a 8 qubits.
+    \item Métrica de calidad: fidelidad de la unitaria reconstruida.
+    \item Métrica de costo: tiempo de evaluación, medido tras estabilizar la GPU.
+    \item Distribuciones de tiempo asimétricas, reportadas mediante bandas de mínimo y máximo en lugar de desviación estándar.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Resultados: aceleración}
+  \begin{center}
+  \begin{tabular}{lcc}
+    \toprule
+    \textbf{Sistema} & \textbf{Método de referencia} & \textbf{Aceleración} \\
+    \midrule
+    2 a 6 qubits & Magnus y Trotter & $8.9\times$ a $19.3\times$ \\
+    \midrule
+    7 qubits & Trotter & $6.8\times$ \\
+    8 qubits & Trotter & $17.8\times$ \\
+    7 qubits & Magnus  & $2.0\times$ \\
+    8 qubits & Magnus  & $7.8\times$ \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \vfill
+  \pause
+  La aceleración aumenta con el tamaño del sistema en ambos métodos de referencia. % TODO: verificar que esta lectura es la correcta para todos los casos antes de afirmarla.
+\end{frame}
+
+\begin{frame}{Resultados: fidelidad de la dinámica}
+  % TODO: insertar figura de fidelidad frente al tiempo.
+  \begin{center}
+    \fbox{\parbox[c][4.5cm][c]{0.75\textwidth}{\centering \textit{Figura: fidelidad de la evolución reproducida.}}}
+  \end{center}
+  \vfill
+  % TODO: incluir el comportamiento fuera de la ventana de entrenamiento, que es la evidencia
+  % contra la objecion de sobreajuste temporal.
+\end{frame}
+
+\begin{frame}{Resultados: escalamiento}
+  % TODO: insertar figura de costo frente al numero de qubits.
+  \begin{center}
+    \fbox{\parbox[c][4.5cm][c]{0.75\textwidth}{\centering \textit{Figura: costo computacional frente al tamaño del sistema.}}}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Conclusiones del trabajo II}
+  \begin{itemize}
+    \item Una red informada por la física proporciona una representación continua de $\Uop(t)$ cuyo costo de evaluación no depende del instante consultado.
+    \pause
+    \item La aceleración frente a Magnus y Trotter se sostiene hasta 8 qubits, y crece con el tamaño del sistema.
+    \pause
+    \item El generador reconstruido es efectivo. Reproduce la dinámica sin identificar los coeficientes del Hamiltoniano microscópico.
+  \end{itemize}
+  \vfill
+  \pause
+  \begin{block}{Limitaciones}
+    El entrenamiento tiene un costo inicial que solo se amortiza si la unitaria se consulta repetidamente. La validación fuera de la ventana temporal de entrenamiento acota el rango de extrapolación admisible. % TODO: ajustar al rango efectivamente verificado.
+  \end{block}
+\end{frame}
+
+% =====================================================================
+\section{Trabajos futuros}
+% =====================================================================
+
+\begin{frame}{Extensiones directas}
+  \begin{itemize}
+    \item Predicción de marginales no medidos a partir del conjunto medido, en lugar de reconstrucción del estado global.
+    \pause
+    \item Incorporación de constraints diferenciables sobre $\partial_t \Uop$, condicionada a la disponibilidad de tomografía de proceso a alta densidad temporal.
+    \pause
+    \item Extensión de ambos métodos a dinámica no unitaria, mediante la ecuación maestra de Lindblad.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Línea de investigación}
+  \begin{block}{Susceptibilidad local como criterio de diseño}
+    La susceptibilidad $\chi(x)$, definida a partir de la norma de Frobenius acumulada de los jacobianos internos, correlaciona espacialmente con el error de la red y permite asignar capacidad donde se necesita. Su extensión a circuitos cuánticos variacionales es la continuación natural de esta tesis.
+  \end{block}
+  \pause
+  \vfill
+  \begin{itemize}
+    \item Tomografía dinámica de estados cuánticos.
+    \item Aprendizaje sobre circuitos variacionales.
+    \item Diagnóstico de arquitecturas mediante susceptibilidades.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Producción asociada}
+  % TODO: ajustar el estado de cada trabajo al momento de la defensa.
+  \begin{itemize}
+    \item Uzcátegui-Contreras \emph{et al.}, reconstrucción de matrices densidad mediante imposición de marginales. Publicado.
+    \item Guerra \emph{et al.}, \textit{Interpolation of unitaries with time-dependent Hamiltonians via Deep Learning}. En evaluación, \emph{Machine Learning: Science and Technology}.
+    \item Muñoz-Mellado \emph{et al.}, \textit{Entanglement and discord classification via deep learning}. En preparación.
+    \item Susceptibilidad local $\chi(x)$ como criterio de diagnóstico y diseño en PINNs. En preparación.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+  \begin{center}
+    \Large Gracias
+    \vfill
+    \normalsize
+    Antonio Guerra \\
+    Universidad de Concepción
+  \end{center}
+\end{frame}
+
+% =====================================================================
+% MATERIAL DE RESPALDO
+% Slides para preguntas previsibles. No se presentan en el recorrido normal.
+% =====================================================================
+
+\appendix
+
+\begin{frame}{Respaldo: por qué un Hamiltoniano efectivo y no el real}
+  \begin{itemize}
+    \item La literatura de Hamiltonian learning mide éxito como error paramétrico bajo un ansatz fijo. Si el Hamiltoniano verdadero no pertenece al espacio generado por esa base, lo recuperado es también un generador efectivo.
+    \item La degeneración es intrínseca: distintos generadores producen la misma dinámica sobre la ventana temporal y el conjunto de observables muestreados.
+    \item La validación se hace fuera de la ventana de entrenamiento, no por identificación de coeficientes.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Respaldo: constraint sobre la derivada de $\Uop$}
+  \begin{itemize}
+    \item Un término $\|\partial_t \Uop - f(\Hop,\Uop)\|^2$ acercaría los coeficientes a los del Hamiltoniano real.
+    \item Obtener la referencia exige medir $\Uop$ en instantes separados por $\delta$ pequeño, y la resta de dos cantidades ruidosas dividida por $\delta$ amplifica el error.
+    \item La decisión de no incluirlo mantiene el método sobre información experimentalmente accesible. Queda identificado como extensión.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Respaldo: unicidad de la reconstrucción desde marginales}
+  % TODO: completar con el argumento preciso segun el conjunto de marginales usado.
+  \begin{itemize}
+    \item Cuando $\mathcal{S}$ no es informacionalmente completo, existen múltiples $\dens$ compatibles.
+    \item El operador de imposición garantiza compatibilidad con los marginales medidos, no unicidad.
+    \item La red selecciona, dentro del conjunto compatible, el estado más cercano a la distribución de entrenamiento.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Respaldo: costo de entrenamiento frente a costo de evaluación}
+  % TODO: incluir el tiempo de entrenamiento y el numero de evaluaciones a partir del cual se amortiza.
+  \begin{itemize}
+    \item La aceleración reportada corresponde a la fase de evaluación.
+    \item El entrenamiento tiene un costo inicial que debe amortizarse.
+    \item El punto de equilibrio depende del número de instantes consultados.
+  \end{itemize}
+\end{frame}
+
+\end{document}
